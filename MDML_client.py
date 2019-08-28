@@ -17,21 +17,10 @@ class MDML_debugger:
     """
     This class allows users to retrieve error messages or other important 
     events when running an experiment with the MDML.
-    
-    ...
 
-    Attributes
-    ----------
-    MDML_host : str
-        string for the MDML host running the MQTT message broker
-    MDML_port : int
-        port number used by the MDML MQTT message broker
     """
 
-    MDML_host = '146.137.10.50'
-    MDML_port = 1883
-
-    def __init__(self, experiment_id):
+    def __init__(self, experiment_id, host, port=1883):
         """
         Init an MDML debugger
 
@@ -40,14 +29,18 @@ class MDML_debugger:
         Parameters
         ----------
         experiment_id : str
-            MDML experiment ID, this should have been given to you by an administrator 
+            MDML experiment ID, this should have been given to you by an administrator
+        host : str
+            string for the MDML host running the MQTT message broker
+        port : int
+            port number used by the MDML MQTT message broker (default is 1883)
         """
 
         debug = Thread(target=subscribe.callback,\
             kwargs={\
                 'callback': on_message,\
                 'topics': "MDML_DEBUG/" + experiment_id.upper(),\
-                'hostname':self.MDML_host\
+                'hostname':host\
             })
         debug.setDaemon(False)
         debug.start()
@@ -64,10 +57,6 @@ class MDML_experiment:
 
     Attributes
     ----------
-    MDML_host : str
-        string for the MDML host running the MQTT message broker
-    MDML_port : int
-        port number used by the MDML MQTT message broker
     device_config : dict
         example configuration for one device. Used in the  
         'devices' array of the experiment's config file
@@ -88,8 +77,6 @@ class MDML_experiment:
         Gets unix time in nanoseconds 
     """
 
-    MDML_host = '146.137.10.50'
-    MDML_port = 1883
     device_config = {
         'device_id': 'INSERT device_id',
         'device_name': 'INSERT device_name',
@@ -114,7 +101,7 @@ class MDML_experiment:
         ]
     }
 
-    def __init__(self, experiment_id, config):
+    def __init__(self, experiment_id, config, host, port):
         """
         Init an MDML experiment
 
@@ -127,6 +114,10 @@ class MDML_experiment:
         config_json_filepath : str or dict
             If string, contains the filepath to a json file with the experiment's configuration
             If dict, the dict will be the experiment's configuration
+        host : str
+            string for the MDML host running the MQTT message broker
+        port : int
+            port number used by the MDML MQTT message broker (default is 1883)
         """
         
         self.experiment_id = experiment_id.upper()
@@ -147,7 +138,7 @@ class MDML_experiment:
         client = mqtt.Client()
         
         # Connect to Mosquitto broker
-        client.connect(self.MDML_host, self.MDML_port, 60)
+        client.connect(host, port, 60)
         
         # Storing
         self.client = client
