@@ -299,20 +299,3 @@ class debugger:
             })
         debug.setDaemon(False)
         debug.start()
-
-#######################################################
-################# TESTING & DEBUGGING #################
-#######################################################
-
-# # Return data or error messages
-# debugger = debugger('TEST') # loops forever
-
-# # Testing the classes
-# experiment = experiment('TEST', './real_config.json')
-# experiment.validate_config()
-# experiment.send_config()
-# time.sleep(2)
-# experiment.publish_data('SENSOR1', 'some_data_here', influx_measurement=True)
-# time.sleep(1)
-# experiment.reset()
-# print(experiment.unix_time())

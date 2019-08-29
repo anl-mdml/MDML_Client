@@ -34,11 +34,11 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     # Publishing data - do this as much and as often as required by your experiment
     My_MDML_Exp.publish_data(device_id, data, data_delimiter)
 
-    # Make sure to reset the MDML to end your experiment! 
+    # After publishing everything, make sure to reset the MDML to end your experiment! 
     My_MDML_Exp.reset()
   ```
 ### Debugger
-* Listens to the MDML message broker for any updates pertaining to your experiment (error, status, etc).
+* Listens to the MDML message broker for any updates pertaining to your experiment (error, status, etc). This should be called before sending your configuration to know if it was accepted or rejected. The debugger will run in a separate thread from your main program.
     ```python
     import mdml_client as mdml
     
