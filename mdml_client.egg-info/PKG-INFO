@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mdml-client
-Version: 0.1.0
+Version: 0.1.1
 Summary: Client to connect to the MDML
 Home-page: https://github.com/jelias1/MDML_Client
 Author: Jakob Elias
@@ -16,21 +16,14 @@ Description: # MDML Client
         ```
         
         ## Usage
-        There are two classes in this package: experiment and debugger.
         
         ### Experiment
-          * Provides the functionality to connect to the MDML message broker, start an experiment, publish data, and terminate an experiment.
+          * Provides the functionality to connect to the MDML message broker, start an experiment, publish data, and terminate an experiment. Your experiment ID and the host IP will be provided to you by an MDML admin.
           ```python
             import mdml_client as mdml
         
-            # Experiment ID - supplied by MDML admins for your project
-            Exp_ID = 'TEST'
-            
-            # MDML message broker host
-            host = 'Some.IP.Address'
-            
             # Create an MDML experiment
-            My_MDML_Exp = mdml.experiment(Exp_ID, host)
+            My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "HOST.IP.ADDRESS")
         
             # Add and validate a configuration for the experiment
             My_MDML_Exp.add_config({"See Configuration section for parameter details"})
@@ -46,7 +39,7 @@ Description: # MDML Client
             # Appending unix time to the data string for more accurate time-keeping (see Time section)
             data = mdml.unix_time() + data_delimiter + data 
         
-            # Publishing data
+            # Publishing data - do this as much and as often as required by your experiment
             My_MDML_Exp.publish_data(device_id, data, data_delimiter)
         
             # Make sure to reset the MDML to end your experiment! 
@@ -64,12 +57,12 @@ Description: # MDML Client
         ## Important Notes
         
         ### Configuration
-        The configuration of an experiment serves as metadata for each device/sensor generating data and for the experiment itself. The configuration also gives the MDML an idea of what data to expect in order to warn you if bad data is being published. We highly recommend taking the time to craft a detailed configuration so that your experiment and its data can be easily understood and reused by someone else if needed.
+        The configuration of an experiment serves as metadata for each device/sensor generating data and for the experiment itself. The configuration also allows the MDML to warn you if any bad data is being published. We highly recommend taking the time to craft a detailed configuration so that if used in the future, any researcher would be able to understand your experiment and its data.
         
-        The add_config() method will accept a dictionary containing the configuration or a string of the path to a file containing the configuration. The file's contents will be run through json.loads() and must return a dictionary.  
+        The add_config() method of an experiment object can accept one of two things. A dictionary containing the configuration itself or a string of the path to a file containing the configuration. The file's contents will be run through json.loads() and must return a dictionary.  
         
         ### Time
-        This package includes a helper function "unix_time()". It outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp used will represent when the data was saved in InfluxDB, not when the data was actually generated.s
+        This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
