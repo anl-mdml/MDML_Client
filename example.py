@@ -1,10 +1,14 @@
-from MDML_client import MDML_experiment, MDML_debugger
+# pip install mdml_client #
+
+import mdml_client as mdml
 
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
+# MDML message broker host
+host = '146.137.10.50'
 
 # Create a subscriber on the MDML message broker to receive events while using MDML  
-MDML_debugger(Exp_ID)
+mdml.debugger(Exp_ID, host)
 
 # Create a configuration for your experiment
 config = {
@@ -55,32 +59,32 @@ config = {
 }
 
 # Create MDML experiment
-My_MDML_Exp = MDML_experiment(Exp_ID, config)
+My_MDML_Exp = mdml.experiment(Exp_ID, host)
 
 # You can also input a filepath to a file containing the configuration
 # The contents of the file must be a dict after json.loads()
 ### My_MDML_Exp = MDML_experiment(Exp_ID, './test_config.json')
 
 
-# Validate configuration file
-My_MDML_Exp.validate_config()
+# Add configuration file
+My_MDML_Exp.add_config(config)
 
 # Send configuration file
 My_MDML_Exp.send_config() # this starts the experiment
 
 # Creating data to send
-data = '1\t4\t30\t1430\t64\tExperiment running according to plan.'
+data = '1\t4\t30\t1630\t64\tExperiment running according to plan.'
 device_id = 'DEVICE_J' # Should match one of the devices in config file
 data_delimiter = '\t'
-influx_measurement = True#False#
+use_influxdb = True#False#
 # Appending unix time to data for InfluxDB
-data = My_MDML_Exp.unix_time() + data_delimiter + data 
+data = mdml.unix_time() + data_delimiter + data 
 
 # Publishing data
-My_MDML_Exp.publish_data(data,\
-    device_id,\
+My_MDML_Exp.publish_data(device_id,\
+    data,\
     data_delimiter,\
-    influx_measurement)
+    use_influxdb)
 
 # Reset MDML to end the experiment! VERY IMPORTANT!!!
 My_MDML_Exp.reset()
