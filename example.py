@@ -66,13 +66,13 @@ My_MDML_Exp = mdml.experiment(Exp_ID, host)
 ### My_MDML_Exp = MDML_experiment(Exp_ID, './test_config.json')
 
 
-# Add configuration file
+# Add and validate a configuration for the experiment
 My_MDML_Exp.add_config(config)
 
-# Send configuration file
+# Send configuration file to the MDML
 My_MDML_Exp.send_config() # this starts the experiment
 
-# Creating data to send
+# Creating example data to publish
 data = '1\t4\t30\t1630\t64\tExperiment running according to plan.'
 device_id = 'DEVICE_J' # Should match one of the devices in config file
 data_delimiter = '\t'
@@ -80,11 +80,11 @@ use_influxdb = True#False#
 # Appending unix time to data for InfluxDB
 data = mdml.unix_time() + data_delimiter + data 
 
-# Publishing data
+# Publishing data - do this as much and as often as required by your experiment
 My_MDML_Exp.publish_data(device_id,\
     data,\
     data_delimiter,\
     use_influxdb)
 
-# Reset MDML to end the experiment! VERY IMPORTANT!!!
+# Make sure to reset the MDML to end your experiment!
 My_MDML_Exp.reset()

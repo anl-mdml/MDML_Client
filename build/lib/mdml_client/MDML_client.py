@@ -213,11 +213,8 @@ class experiment:
         # Publishing experiment configuration
         try:
             self.client.publish(topic, self.config)
-            print(topic)
-            self.config_sent = True
             return True
         except: # Warn if something goes wrong
-            self.config_sent = False
             print("Error sending config.")
             return False
 
@@ -240,25 +237,44 @@ class experiment:
             True is the data should be stored in InfluxDB, False otherwise (default is False)
         """
 
-        if self.config_sent:
-            # Creating MQTT topic
-            topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
-            # Base payload
-            payload = {
-                'data': data
-            }
-            # Optional parameters 
-            if data_delimiter != 'null':
-                payload['data_delimiter'] = data_delimiter
-            if influxDB:
-                payload['influx_measurement'] = device_id.upper()
-            
-            # Send data via MQTT
-            self.client.publish(topic, json.dumps(payload))
-        else:
-            print("""No configuration has been sent to MDML yet. Have you run 
-            validate_config() and send_config()?""")
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Base payload
+        payload = {
+            'data': data
+        }
+        # Optional parameters 
+        if data_delimiter != 'null':
+            payload['data_delimiter'] = data_delimiter
+        if influxDB:
+            payload['influx_measurement'] = device_id.upper()
+        
+        # Send data via MQTT
+        self.client.publish(topic, json.dumps(payload))
 
+    def publish_image(self, device_id, img_bytes):
+        """
+        Publish an image to MDML
+
+        ...
+
+        Parameters
+        ----------
+        device_id : str
+            Unique string identifying the device this data originated from.
+            This must correspond with the experiment's configuration
+        img_bytes : bytes
+            bytes of the image you want to send
+        """
+
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Data checks
+        if type(img_bytes) == bytes:
+            # Publish it
+            self.client.publish(topic, img_bytes)
+        else:
+            print("Data supplied was not of type bytes")
             
     def reset(self):
         """
@@ -299,20 +315,3 @@ class debugger:
             })
         debug.setDaemon(False)
         debug.start()
-
-#######################################################
-################# TESTING & DEBUGGING #################
-#######################################################
-
-# # Return data or error messages
-# debugger = debugger('TEST') # loops forever
-
-# # Testing the classes
-# experiment = experiment('TEST', './real_config.json')
-# experiment.validate_config()
-# experiment.send_config()
-# time.sleep(2)
-# experiment.publish_data('SENSOR1', 'some_data_here', influx_measurement=True)
-# time.sleep(1)
-# experiment.reset()
-# print(experiment.unix_time())
