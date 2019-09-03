@@ -15,10 +15,10 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     import mdml_client as mdml
 
     # Create an MDML experiment
-    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "HOST.IP.ADDRESS")
+    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID_HERE", "HOST.IP.ADDRESS.HERE")
 
     # Add and validate a configuration for the experiment
-    My_MDML_Exp.add_config({"See Configuration section for parameter details"})
+    My_MDML_Exp.add_config({"See Configuration section for details"})
 
     # Send the configuration to the MDML
     My_MDML_Exp.send_config()
@@ -38,12 +38,13 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     My_MDML_Exp.reset()
   ```
 ### Debugger
-* Listens to the MDML message broker for any updates pertaining to your experiment (error, status, etc). This should be called before sending your configuration to know if it was accepted or rejected. The debugger will run in a separate thread from your main program.
+* Listens to the MDML message broker for any updates pertaining to your experiment (error, status, etc). This should be called before interacting with the MDML to receive appropriate error messages. The debugger will start in a separate thread from your main program. Therefore, the debugger can be called within the same script as your data publishing or separately.
     ```python
     import mdml_client as mdml
     
     # Create a subscriber on the MDML message broker to receive events while using MDML  
     mdml.debugger("EXPERIMENT_ID_HERE", "HOST.IP.ADDRESS.HERE")
+
     ```
 
 ## Important Notes
