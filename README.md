@@ -10,12 +10,12 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 ## Usage
 
 ### Experiment
-  * Provides the functionality to connect to the MDML message broker, start an experiment, publish data, and terminate an experiment. Your experiment ID and the host IP will be provided to you by an MDML admin.
+  * Provides the functionality to connect to the MDML message broker, start an experiment, publish data, and terminate an experiment. Your experiment ID, username, password, and host IP will be provided by an MDML admin.
   ```python
     import mdml_client as mdml
 
     # Create an MDML experiment
-    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID_HERE", "HOST.IP.ADDRESS.HERE")
+    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID_HERE", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS.HERE")
 
     # Add and validate a configuration for the experiment
     My_MDML_Exp.add_config({"See Configuration section for details"})
@@ -27,14 +27,15 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     data = '1\t4\t30\t1630\t64\tExperiment running according to plan.'
     device_id = 'EXAMPLE_DEVICE'
     data_delimiter = '\t'
+    use_influxDB = False
 
     # Appending unix time to the data string for more accurate time-keeping (see Time section)
-    data = mdml.unix_time() + data_delimiter + data 
+    data = mdml.unix_time() + data_delimiter + data
 
     # Publishing data - do this as much and as often as required by your experiment
-    My_MDML_Exp.publish_data(device_id, data, data_delimiter)
+    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
 
-    # After publishing everything, make sure to reset the MDML to end your experiment! 
+    # After publishing everything, make sure to reset the MDML to end your experiment!
     My_MDML_Exp.reset()
   ```
 ### Debugger
@@ -43,7 +44,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     import mdml_client as mdml
     
     # Create a subscriber on the MDML message broker to receive events while using MDML  
-    mdml.debugger("EXPERIMENT_ID_HERE", "HOST.IP.ADDRESS.HERE")
+    mdml.debugger("EXPERIMENT_ID_HERE", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS.HERE")
 
     ```
 
