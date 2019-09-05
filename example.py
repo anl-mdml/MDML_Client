@@ -6,9 +6,12 @@ import mdml_client as mdml
 Exp_ID = 'TEST'
 # MDML message broker host
 host = '146.137.10.50'
+# MDML username and password
+username = 'test'
+password = 'test'
 
 # Create a subscriber on the MDML message broker to receive events while using MDML  
-mdml.debugger(Exp_ID, host)
+mdml.debugger(Exp_ID, username, password, host)
 
 # Create a configuration for your experiment
 config = {
@@ -59,7 +62,7 @@ config = {
 }
 
 # Create MDML experiment
-My_MDML_Exp = mdml.experiment(Exp_ID, host)
+My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # You can also input a filepath to a file containing the configuration
 # The contents of the file must be a dict after json.loads()

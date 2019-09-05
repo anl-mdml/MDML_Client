@@ -131,6 +131,7 @@ class experiment:
             # Connect to Mosquitto broker
             client.connect(host, port, 60)
             self.client = client
+            print("Successfully connected to the message broker.")
         except ConnectionRefusedError: 
             print("Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
