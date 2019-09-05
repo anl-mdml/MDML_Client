@@ -97,7 +97,7 @@ class experiment:
         ]
     }
 
-    def __init__(self, experiment_id, host, port=1883):
+    def __init__(self, experiment_id, username, passwd, host, port=1883):
         """
         Init an MDML experiment
 
@@ -107,6 +107,10 @@ class experiment:
         ----------
         experiment_id : str
             MDML experiment ID, this should have been given to you by an MDML admin
+        username : str
+            MDML username
+        passwd : str
+            Password for the supplied MDML username
         host : str
             string for the MDML host running the MQTT message broker
         port : int
@@ -114,14 +118,21 @@ class experiment:
         """
         
         self.experiment_id = experiment_id.upper()
+        self.username = username
+        self.host = host
+        self.port = port
         
         # Creating connection to MQTT broker
         client = mqtt.Client()
         
         try:
+            # Set authorization parameters
+            client.username_pw_set(self.username, passwd)
             # Connect to Mosquitto broker
             client.connect(host, port, 60)
             self.client = client
+        except ConnectionRefusedError: 
+            print("Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
             print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
@@ -283,6 +294,22 @@ class experiment:
         """
         topic = "MDML/" + self.experiment_id + "/RESET"
         self.client.publish(topic, '{"reset": 1}')
+    
+    def start_debugger(self):
+        """
+        Init an MDML debugger to retrieve error messages or other important 
+        events when running an experiment.
+
+        """
+
+        debug = Thread(target=subscribe.callback,\
+            kwargs={\
+                'callback': on_MDML_message,\
+                'topics': "MDML_DEBUG/" + self.experiment_id,\
+                'hostname':self.host\
+            })
+        debug.setDaemon(False)
+        debug.start()
 
 class debugger:
     """
@@ -291,7 +318,7 @@ class debugger:
 
     """
 
-    def __init__(self, experiment_id, host, port=1883):
+    def __init__(self, experiment_id, username, passwd, host, port=1883):
         """
         Init an MDML debugger
 
@@ -301,6 +328,10 @@ class debugger:
         ----------
         experiment_id : str
             MDML experiment ID, this should have been given to you by an administrator
+        username : str
+            MDML username
+        passwd : str
+            password for the supplied MDML username
         host : str
             string for the MDML host running the MQTT message broker
         port : int
@@ -311,7 +342,8 @@ class debugger:
             kwargs={\
                 'callback': on_MDML_message,\
                 'topics': "MDML_DEBUG/" + experiment_id.upper(),\
-                'hostname':host\
+                'hostname':host,\
+                'auth': {'username': username, 'password': passwd}\
             })
         debug.setDaemon(False)
         debug.start()
