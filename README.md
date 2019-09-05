@@ -15,7 +15,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     import mdml_client as mdml
 
     # Create an MDML experiment
-    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID_HERE", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS.HERE")
+    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
 
     # Add and validate a configuration for the experiment
     My_MDML_Exp.add_config({"See Configuration section for details"})
@@ -44,7 +44,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     import mdml_client as mdml
     
     # Create a subscriber on the MDML message broker to receive events while using MDML  
-    mdml.debugger("EXPERIMENT_ID_HERE", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS.HERE")
+    mdml.debugger("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
 
     ```
 
