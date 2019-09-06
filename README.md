@@ -10,7 +10,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 ## Usage
 
 ### Experiment
-  * Provides the functionality to connect to the MDML message broker, start an experiment, publish data, and terminate an experiment. Your experiment ID, username, password, and host IP will be provided by an MDML admin.
+  * Provides methods to connect to the MDML message broker, start an experiment, publish data, terminate an experiment, and receive updates from the MDML. Your experiment ID, username, password, and host IP will be provided by an MDML admin.
   ```python
     import mdml_client as mdml
 
@@ -19,7 +19,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 
     # Start the debugger - receives message from MDML about your experiment
     My_MDML_Exp.start_debugger()
-    
+
     # Add and validate a configuration for the experiment
     My_MDML_Exp.add_config({"See Configuration section for details"})
 
@@ -41,15 +41,6 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     # After publishing everything, make sure to reset the MDML to end your experiment!
     My_MDML_Exp.reset()
   ```
-### Debugger
-* Listens to the MDML message broker for any updates pertaining to your experiment (error, status, etc). This should be called before interacting with the MDML to receive appropriate error messages. The debugger will start in a separate thread from your main program. Therefore, the debugger can be called within the same script as your data publishing or separately.
-    ```python
-    import mdml_client as mdml
-    
-    # Create a subscriber on the MDML message broker to receive events while using MDML  
-    mdml.debugger("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
-
-    ```
 
 ## Important Notes
 

@@ -38,14 +38,19 @@ class experiment:
 
     Methods
     -------
-    add_config()
+    add_config(config)
         Validates that nothing is wrong with the supplied config file
     send_config()
         Sends the configuration dict to MDML to start an experiment
-    publish_data(data, device_id, data_delimiter='null', influx_measurement=False)
+    publish_data(device_id, data, data_delimiter='null', influx_measurement=False)
         Publishes data to the MDML message broker
+    publish_image(device_id, img_bytes)
+        Publishes image to the MDML message broker
     reset()
         Sends a reset message to MDML to trigger the end of an experiment
+    start_debugger()
+        Creates a separate thread to print messages from MDML regarding
+        your experiment
     """
 
     example_device_config = {
@@ -88,7 +93,7 @@ class experiment:
     example_config = {
         "experiment": {
             "experiment_id": "TEST",
-            "experiment_number": "2",
+            "experiment_number": "1",
             "experiment_notes": "example.py file for MDML python package",
             "experiment_devices": ["EXAMPLE_DEVICE"]
         },
