@@ -17,6 +17,9 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     # Create an MDML experiment
     My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
 
+    # Start the debugger - receives message from MDML about your experiment
+    My_MDML_Exp.start_debugger()
+    
     # Add and validate a configuration for the experiment
     My_MDML_Exp.add_config({"See Configuration section for details"})
 

@@ -1,6 +1,5 @@
-# pip install mdml_client #
-
-import mdml_client as mdml
+import time
+import mdml_client as mdml # pip install mdml_client #
 
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
@@ -10,8 +9,6 @@ host = '146.137.10.50'
 username = 'test'
 password = 'test'
 
-# Create a subscriber on the MDML message broker to receive events while using MDML  
-mdml.debugger(Exp_ID, username, password, host)
 
 # Create a configuration for your experiment
 config = {
@@ -64,13 +61,16 @@ config = {
 # Create MDML experiment
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
-# You can also input a filepath to a file containing the configuration
-# The contents of the file must be a dict after json.loads()
-### My_MDML_Exp = MDML_experiment(Exp_ID, './test_config.json')
+# Receive events about your experiment from MDML
+My_MDML_Exp.start_debugger()
 
+# Sleep to let debugger thread set up
+time.sleep(1)
 
 # Add and validate a configuration for the experiment
 My_MDML_Exp.add_config(config)
+# You can also input a filepath to a file containing the configuration
+# The contents of the file must be a dict after json.loads()
 
 # Send configuration file to the MDML
 My_MDML_Exp.send_config() # this starts the experiment
