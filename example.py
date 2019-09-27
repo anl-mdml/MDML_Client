@@ -7,7 +7,7 @@ Exp_ID = 'TEST'
 host = '146.137.10.50'
 # MDML username and password
 username = 'test'
-password = 'test'
+password = 'testtest'
 
 
 # Create a configuration for your experiment
@@ -60,6 +60,9 @@ config = {
 
 # Create MDML experiment
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
+
+# Login with Globus
+My_MDLM_Exp.login()
 
 # Receive events about your experiment from MDML
 My_MDML_Exp.start_debugger()

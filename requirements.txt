@@ -1,0 +1,2 @@
+paho-mqtt
+fair_research_login
