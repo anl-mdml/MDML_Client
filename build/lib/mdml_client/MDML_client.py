@@ -2,8 +2,9 @@ import json
 import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
 import time
+from mdml_client.config import CLIENT_ID
 from threading import Thread
-
+from fair_research_login.client import NativeClient
 
 def on_MDML_message(client, userdata, message):
     print("******************************** MDML MESSAGE ********************************\n")
@@ -127,15 +128,20 @@ class experiment:
         self.password = passwd
         self.host = host
         self.port = port
-        
+        self.tokens = None
+
         # Creating connection to MQTT broker
         client = mqtt.Client()
-        
+        print(client)        
         try:
             # Set authorization parameters
-            client.username_pw_set(self.username, passwd)
+            print(self.username)
+            print(host)
+            print(port)
+            print("Connecting...")
+            client.username_pw_set(self.username, self.password)
             # Connect to Mosquitto broker
-            client.connect(host, port, 60)
+            client.connect(host, port, 10)
             self.client = client
             print("Successfully connected to the message broker.")
         except ConnectionRefusedError: 
@@ -143,6 +149,13 @@ class experiment:
         except:
             print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
+
+    def login(self):
+        """Perform a Globus login to acquire auth tokens.
+        """
+        cli = NativeClient(client_id=config.CLIENT_ID)
+        self.tokens = cli.login(refresh_tokens=True, no_local_server=True, no_browser=True)
+        print(self.tokens) 
 
     def add_config(self, config):
         """

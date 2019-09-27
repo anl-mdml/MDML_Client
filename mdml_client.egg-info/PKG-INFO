@@ -1,6 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 1.1
 Name: mdml-client
-Version: 0.2.3
+Version: 0.2.4
 Summary: Client to connect to the MDML
 Home-page: https://github.com/jelias1/MDML_Client
 Author: Jakob Elias
@@ -63,4 +63,3 @@ Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Description-Content-Type: text/markdown
