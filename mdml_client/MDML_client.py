@@ -154,7 +154,7 @@ class experiment:
         """
         Perform a Globus login to acquire auth tokens.
         """
-        cli = NativeClient(client_id=config.CLIENT_ID)
+        cli = NativeClient(client_id=CLIENT_ID)
         self.tokens = cli.login(refresh_tokens=True, no_local_server=True, no_browser=True)
         print(self.tokens) 
 
@@ -275,6 +275,10 @@ class experiment:
         payload = {
             'data': data
         }
+        # Add auth if set
+        if self.tokens:
+            payload['globus_token'] = self.tokens['auth.globus.org']['access_token']
+
         # Optional parameters 
         if data_delimiter != 'null':
             payload['data_delimiter'] = data_delimiter
