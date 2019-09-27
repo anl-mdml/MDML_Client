@@ -4,7 +4,8 @@ import mdml_client as mdml # pip install mdml_client #
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = '146.137.10.50'
+#host = '146.137.10.50'
+host = '127.0.0.1'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -62,7 +63,7 @@ config = {
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Login with Globus
-My_MDLM_Exp.login()
+My_MDML_Exp.login()
 
 # Receive events about your experiment from MDML
 My_MDML_Exp.start_debugger()
