@@ -3,18 +3,17 @@ import mdml_client as mdml # pip install mdml_client #
 
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
-# MDML message broker host
-host = '146.137.10.50'
+# MDML message broker host IP
+host = ''
 # MDML username and password
-username = 'test'
-password = 'test'
+username = ''
+password = ''
 
 
 # Create a configuration for your experiment
 config = {
     "experiment": {
         "experiment_id": "TEST",
-        "experiment_number": "2",
         "experiment_notes": "example.py file for MDML python package",
         "experiment_devices": ["DEVICE_J"]
     },
@@ -25,6 +24,7 @@ config = {
             "device_version": "1",
             "device_output": "Random data for testing",
             "device_output_rate": 0.1,
+            "device_data_type": "text/numeric",
             "device_notes": "Nothing here",
             "headers": [
                 "time",

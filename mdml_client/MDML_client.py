@@ -40,7 +40,7 @@ def unix_time(ret_int=False):
         True to return the value as type integer. False to 
         return the value as type string. 
     """
-    unix_time = format(time.time() * 1_000_000_000, '.0f')
+    unix_time = format(time.time() * 1000000000, '.0f') #1,000,000,000
     if ret_int:
         return int(unix_time)
     else:
@@ -449,7 +449,7 @@ class experiment:
         # Setting start times of experiment
         exp_start_time = int(min(first_timestamps))
         exp_end_time = int(max(last_timestamps))
-        exp_duration = (exp_end_time - exp_start_time)/60_000_000_000 # nansecs to mins
+        exp_duration = (exp_end_time - exp_start_time)/60000000000 # nansecs to mins 60,000,000,000
         print("Experiment replay will take " + str(exp_duration) + " minutes.")
         sim_start_time = unix_time(ret_int=True)
         
@@ -482,7 +482,7 @@ class experiment:
 
             if (sim_delta >= exp_delta):
                 if data_type == "text/numeric":
-                    new_time = str(sim_start_time + exp_delta) #unix_time(ret_int=False)
+                    new_time = str(sim_start_time + exp_delta)
                     next_row = data[0].split('\t')
                     next_row[0] = new_time
                     next_row = '\t'.join(next_row)
@@ -490,7 +490,7 @@ class experiment:
                 elif data_type == "image":
                     img_filename = file_dir + '/' + re.split('\t', data[0])[1]
                     img_byte_string = read_image(img_filename)
-                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + exp_delta) #unix_time())
+                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + exp_delta)
                 else:
                     print("DATA_TYPE IN CONFIGURATION NOT SUPPORTED")
                 del data[0]
