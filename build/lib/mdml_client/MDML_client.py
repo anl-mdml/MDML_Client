@@ -12,9 +12,6 @@ from threading import Thread
 
 
 def on_MDML_message(client, userdata, message):
-    print(message)
-    print(message.payload)
-    print(message.payload.decode('utf-8'))
     print("******************************** MDML MESSAGE ********************************\n")
     print("%s  :  %s" % (message.topic, message.payload.decode('utf-8')))
     print()
