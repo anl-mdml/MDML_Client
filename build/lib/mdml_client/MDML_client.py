@@ -154,8 +154,10 @@ class experiment:
         """
         Perform a Globus login to acquire auth tokens.
         """
+        scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
         cli = NativeClient(client_id=CLIENT_ID)
-        self.tokens = cli.login(refresh_tokens=True, no_local_server=True, no_browser=True)
+        self.tokens = cli.login(refresh_tokens=True, no_local_server=True, 
+                                no_browser=True, requested_scopes=scopes)
         print(self.tokens) 
 
     def add_config(self, config):
@@ -225,6 +227,13 @@ class experiment:
                 configuration""")
                 return False
 
+        if self.tokens:
+            try:
+                self.config['globus_token'] = self.tokens['funcx_service']['access_token']
+            except:
+                pass
+
+
         # Return to string to prepare for sending to MDML
         self.config = json.dumps(self.config)
         print("Valid configuration!")
@@ -275,9 +284,11 @@ class experiment:
         payload = {
             'data': data
         }
+        payload['funcx'] = {'data' : {'test': 'hello'}}
         # Add auth if set
         if self.tokens:
-            payload['globus_token'] = self.tokens['auth.globus.org']['access_token']
+            payload['globus_token'] = self.tokens['funcx_service']['access_token']
+            #payload['globus_token'] = self.tokens['funcx_service']['refresh_token']
 
         # Optional parameters 
         if data_delimiter != 'null':

@@ -77,7 +77,7 @@ My_MDML_Exp.add_config(config)
 # The contents of the file must be a dict after json.loads()
 
 # Send configuration file to the MDML
-My_MDML_Exp.send_config() # this starts the experiment
+#My_MDML_Exp.send_config() # this starts the experiment
 
 # Creating example data to publish
 data = '1\t4\t30\t1630\t64\tExperiment running according to plan.'
@@ -94,4 +94,4 @@ My_MDML_Exp.publish_data(device_id,\
     use_influxdb)
 
 # Make sure to reset the MDML to end your experiment!
-My_MDML_Exp.reset()
+#My_MDML_Exp.reset()
