@@ -207,7 +207,7 @@ class experiment:
             print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
 
-    def add_config(self, config):
+    def add_config(self, config, experiment_run_id=""):
         """
         Add a configuration to the experiment
 
@@ -218,6 +218,10 @@ class experiment:
         config : str or dict
             If string, contains the filepath to a json file with the experiment's configuration
             If dict, the dict will be the experiment's configuration
+
+        experiment_run_id : str
+            String containing the desired experiment run id
+
 
         Returns
         -------
@@ -262,18 +266,19 @@ class experiment:
         for device_keys in devices:
             if 'device_id' not in device_keys or\
                 'device_name' not in device_keys or\
-                'device_version' not in device_keys or\
                 'device_output' not in device_keys or\
                 'device_output_rate' not in device_keys or\
                 'device_data_type' not in device_keys or\
                 'device_notes' not in device_keys or\
                 'headers' not in device_keys or\
                 'data_types' not in device_keys or\
-                'data_units' not in device_keys or\
-                'save_tsv' not in device_keys:
+                'data_units' not in device_keys:
                 print("""Missing required fields in the 'devices' section of your 
                 configuration""")
                 return False
+
+        if experiment_run_id != "":
+            self.config['experiment']['experiment_run_id'] = experiment_run_id
 
         # Return to string to prepare for sending to MDML
         self.config = json.dumps(self.config)
@@ -300,7 +305,54 @@ class experiment:
             print("Error sending config.")
             return False
 
-    def publish_data(self, device_id, data, data_delimiter='null', influxDB=False):
+    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t', influxDB=True):
+        """
+        Publish vector data to MDML. The data will be 
+
+        ...
+
+        Parameters
+        ----------
+        device_id : str
+            Unique string identifying the device this data originated from.
+            This should correspond with the experiment's configuration
+        data : dict
+            Dictionary where keys are the headers for the data device and values are
+            tab delimited strings of data values
+        timestamp : str
+            1 of 3 options: 
+                'none' - influxdb creates timestamp
+                'many' - different timestamp for each data point
+                unix time in nanosecond (as string) - one timestamp for all data points
+        data_delimiter : str
+            String containing the delimiter of the data  (default is 'null', no delimiter)
+        influxDB : boolean
+            True if the data should be stored in InfluxDB, False otherwise (default is False)
+        """
+        if type(data) != dict:
+            print("Parameter data is not a dictionary.")
+            return
+
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Base payload
+        payload = {
+            'data': data,
+            'data_type': 'vector',
+            'timestamp': timestamp
+        }
+        # Optional parameters 
+        payload['data_delimiter'] = data_delimiter
+        if influxDB:
+            payload['influx_measurement'] = device_id.upper()
+        if timestamp != 'none':
+            payload['timestamp'] = timestamp
+        
+        # Send data via MQTT
+        self.client.publish(topic, json.dumps(payload))
+      
+
+    def publish_data(self, device_id, data, data_delimiter='null', influxDB = False):
         """
         Publish data to MDML
         
@@ -316,7 +368,7 @@ class experiment:
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
         influxDB : boolean
-            True is the data should be stored in InfluxDB, False otherwise (default is False)
+            True if the data should be stored in InfluxDB, False otherwise (default is False) 
         """
 
         # Creating MQTT topic
