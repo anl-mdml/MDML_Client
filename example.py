@@ -15,7 +15,6 @@ password = 'testtest'
 config = {
     "experiment": {
         "experiment_id": "TEST",
-        "experiment_number": "2",
         "experiment_notes": "example.py file for MDML python package",
         "experiment_devices": ["DEVICE_J"]
     },
@@ -26,6 +25,7 @@ config = {
             "device_version": "1",
             "device_output": "Random data for testing",
             "device_output_rate": 0.1,
+            "device_data_type": "text/numeric",
             "device_notes": "Nothing here",
             "headers": [
                 "time",
