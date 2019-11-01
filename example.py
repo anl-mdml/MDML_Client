@@ -3,11 +3,12 @@ import mdml_client as mdml # pip install mdml_client #
 
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
-# MDML message broker host IP
-host = ''
+# MDML message broker host
+#host = '146.137.10.50'
+host = '127.0.0.1'
 # MDML username and password
-username = ''
-password = ''
+username = 'test'
+password = 'testtest'
 
 
 # Create a configuration for your experiment
@@ -61,6 +62,9 @@ config = {
 # Create MDML experiment
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
+# Login with Globus
+My_MDML_Exp.login()
+
 # Receive events about your experiment from MDML
 My_MDML_Exp.start_debugger()
 
@@ -73,7 +77,7 @@ My_MDML_Exp.add_config(config)
 # The contents of the file must be a dict after json.loads()
 
 # Send configuration file to the MDML
-My_MDML_Exp.send_config() # this starts the experiment
+#My_MDML_Exp.send_config() # this starts the experiment
 
 # Creating example data to publish
 data = '1\t4\t30\t1630\t64\tExperiment running according to plan.'
@@ -90,4 +94,4 @@ My_MDML_Exp.publish_data(device_id,\
     use_influxdb)
 
 # Make sure to reset the MDML to end your experiment!
-My_MDML_Exp.reset()
+#My_MDML_Exp.reset()

@@ -7,9 +7,10 @@ import tarfile
 import numpy as np
 import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
+from mdml_client.config import CLIENT_ID
 from base64 import b64encode
 from threading import Thread
-
+from fair_research_login.client import NativeClient
 
 def on_MDML_message(client, userdata, message):
     print("******************************** MDML MESSAGE ********************************\n")
@@ -187,7 +188,8 @@ class experiment:
         self.password = passwd
         self.host = host
         self.port = port
-        
+        self.tokens = None
+
         # Creating connection to MQTT broker
         client = mqtt.Client()
         client.on_connect = on_MDML_connect
@@ -206,6 +208,15 @@ class experiment:
         except:
             print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
+    def login(self):
+        """
+        Perform a Globus login to acquire auth tokens.
+        """
+        scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
+        cli = NativeClient(client_id=CLIENT_ID)
+        self.tokens = cli.login(refresh_tokens=True, no_local_server=True, 
+                                no_browser=True, requested_scopes=scopes)
+        print(self.tokens) 
 
     def add_config(self, config, experiment_run_id=""):
         """
@@ -276,6 +287,12 @@ class experiment:
                 print("""Missing required fields in the 'devices' section of your 
                 configuration""")
                 return False
+
+        if self.tokens:
+            try:
+                self.config['globus_token'] = self.tokens['funcx_service']['access_token']
+            except:
+                pass
 
         if experiment_run_id != "":
             self.config['experiment']['experiment_run_id'] = experiment_run_id
@@ -377,6 +394,12 @@ class experiment:
         payload = {
             'data': data
         }
+        payload['funcx'] = {'data' : {'test': 'hello'}}
+        # Add auth if set
+        if self.tokens:
+            payload['globus_token'] = self.tokens['funcx_service']['access_token']
+            #payload['globus_token'] = self.tokens['funcx_service']['refresh_token']
+
         # Optional parameters 
         if data_delimiter != 'null':
             payload['data_delimiter'] = data_delimiter
