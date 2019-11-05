@@ -40,6 +40,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 
 ## Documentation
 
+-------------------------------
   ```python 
   My_MDML_Exp = mdml.experiment(experiment_id, username, passwd, host)
   ```
@@ -53,16 +54,19 @@ Create a client to easily access the features of the Manufacturing Data & Machin
   
   Returns - experiment object 
 
+-------------------------------
   ```python
   My_MDML_Exp.start_debugger()
   ```
   Starting the debugger allows you to receive event notifications from the MDML. These notifications will be automatically printed to the console window.
 
+-------------------------------
   ```python
   My_MDML_Exp.globus_login()
   ```
   This method logs the user in using Globus' authentication. It is only required if FuncX analyses will be run. Upon running, a link will be printed in the console window. Clicking it will open a web browser where you will log in to your globus account and be provided a token. Copy and paste this token in the console window to finish the login.
 
+-------------------------------
   ```python
   My_MDML_Exp.add_config("./config.json", "first_run")
   ```
