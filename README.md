@@ -51,7 +51,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
   * host (str) - IP address of the MDML host, given to you by an MDML admin
   
   Returns - experiment object 
-  
+
   This is the first step in interacting with the MDML. ```mdml.experiment()``` creates an experiment object through which methods for interacting with the MDML are accessed. This line also creates a connection to the MDML that will be used later. All input parameters specified here will be given to you by an MDML admin. From here on out, all methods should be called on the variable created by ```mdml.experiment()``` - in this case `My_MDML_Exp`. Since it is possible that your experiment may need to send data from multiple different places, multiple connections to the MDML can be made with this line of code.
 
 
@@ -69,10 +69,15 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 
 -------------------------------
   ```python
-  My_MDML_Exp.add_config("./config.json", "first_run")
+  My_MDML_Exp.add_config(config, experiment_run_id)
   ```
-  This method adds your configuration file locally - it has not been sent to the MDML yet. The first parameter (experiment configuration) is explained in detail below. The second parameter is the run ID for the experiment about to be started. A valid run ID can only contain letters and underscores. Reusing a previous run ID will treat the data as if it came from the past experiment regardless of the time elapsed - data files will be appended to where they left off.
+  Parameters:
+  * config (str | dict) - string to a file path or a dict containing the configuration
+  * experiment_run_id (str) - string of only letters and underscores to identify the experiment run
   
+  This method adds your configuration file to your experiment object - it has not been sent to the MDML yet. The config parameter is explained in detail below. The second parameter is the run ID for the experiment about to be started. A valid run ID can only contain letters and underscores. Reusing a previous run ID will treat the data as if it came from the past experiment regardless of the time elapsed - data files will be appended to where they left off.
+  
+-------------------------------
 
 ### Configuration Documentation
 Every experiment run through the MDML needs to first have a configuration file. This serves to give the MDML context to your data and provide meaningful metadata for your experiments, processes, and data-generating devices. Information in the configuration file should answer questions that the data itself does not. Things like, what units are the data in, what kind of device generated the data, or was an analysis done before sending your data to the MDML? Providing as much information as possible not only increases the data's value for scientific purposes but also minimizes future confusion when you or another researcher want to use the data.
@@ -242,6 +247,20 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
   }
 ```
 
+-------------------------------
+```python
+My_MDML_Exp.send_config()
+```
+This message sends the configuration you added with .add_config() to the MDML. If a debugger has been started, you should see a message regarding the configuration.
+
+
+-------------------------------
+  ```python
+  My_MDML_Exp.globus_login()
+  ```
+  This method logs the user in using Globus' authentication. It is only required if FuncX analyses will be run. Upon running, a link will be printed in the console window. Clicking it will open a web browser where you will log in to your globus account and be provided a token. Copy and paste this token in the console window to finish the login.
+
+-------------------------------
 
 ### Time
 This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
