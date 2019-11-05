@@ -208,9 +208,9 @@ class experiment:
         except:
             print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
-    def login(self):
+    def globus_login(self):
         """
-        Perform a Globus login to acquire auth tokens.
+        Perform a Globus login to acquire auth tokens. Must be done before 
         """
         scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
         cli = NativeClient(client_id=CLIENT_ID)
@@ -292,6 +292,8 @@ class experiment:
             try:
                 self.config['globus_token'] = self.tokens['funcx_service']['access_token']
             except:
+                print("No Auth token found. Have you run .globus_login() to create one?\
+                    This can be ignored if you are not using funcX for analysis.")
                 pass
 
         if experiment_run_id != "":
@@ -394,11 +396,6 @@ class experiment:
         payload = {
             'data': data
         }
-        payload['funcx'] = {'data' : {'test': 'hello'}}
-        # Add auth if set
-        if self.tokens:
-            payload['globus_token'] = self.tokens['funcx_service']['access_token']
-            #payload['globus_token'] = self.tokens['funcx_service']['refresh_token']
 
         # Optional parameters 
         if data_delimiter != 'null':
@@ -408,6 +405,46 @@ class experiment:
         
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
+
+    def publish_analysis(self, queries, function_id, endpoint_id):
+        """
+        Publish a message to run an analysis
+
+        ...
+
+        Parameters
+        ----------
+        queries : list
+            Description of the data to send funcx. See queries format in the documentation
+        function_id : string
+            From FuncX, the id of the function to run.  
+        endpoint_id : string
+            From FuncX, the id of the endpoint to run the function on
+        timestamp : string
+            Unix time the analysis is sent to MDML
+        """
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/FUNCX"
+
+        # Set message payload
+        payload = {
+            'queries': queries,
+            'function_id': function_id,
+            'endpoint_id': endpoint_id,
+            'timestamp': unix_time()
+        }
+
+        # Add auth if set
+        if self.tokens:
+            payload['globus_token'] = self.tokens['funcx_service']['access_token']
+        else:
+            print("No globus token found. You must use the .globus_login() method first.\
+                    This can be ignored if you are not using funcX for analysis.")
+            return
+
+        # Send data via MQTT
+        self.client.publish(topic, json.dumps(payload))
+        
       
     def publish_image(self, device_id, img_byte_string, timestamp = 0):
         """
