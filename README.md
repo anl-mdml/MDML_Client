@@ -277,12 +277,21 @@ This message sends the configuration you added with .add_config() to the MDML. I
 
 -------------------------------
   ```python
-  My_MDML_Exp.publish_analysis(device_id, img_byte_string, timestamp = 0)
+  My_MDML_Exp.publish_image(device_id, img_byte_string, timestamp = 0)
   ```
   Parameters:
   * device_id (str) - device id string that corresponds to a device in the configuration file
   * img_byte_string (str) - string of bytes for the image (output from mdml_client.read_image())
   * timestamp (str) - unix time in nanseconds when the photo was taken 
+  
+-------------------------------
+  ```python
+  My_MDML_Exp.publish_analysis(queries, function_id, endpoint_id)
+  ```
+  Parameters:
+  * queries (str) - Description of the data to send to the FuncX function using the syntax below
+  * function_id (str) - From FuncX, id of the function to run
+  * endpoint_id (str) - From FuncX, id of the endpoint to run on
   
 
 -------------------------------
