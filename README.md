@@ -38,13 +38,20 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     My_MDML_Exp.reset()
   ```
 
-## Explaining the Code
-Below, each line of code is explained. Documentation has also been added on the parameters you will supply to each method call.
+## Documentation
 
   ```python 
-  My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
+  My_MDML_Exp = mdml.experiment(experiment_id, username, passwd, host)
   ```
-  This is the first step in interacting with the MDML. ```mdml.experiment()``` creates an experiment object through which methods for interacting with the MDML are accessed. This line also creates a connection to the MDML that will be used later. All input parameters specified here will be given to you by an MDML admin. From here on out, all methods should be called on the variable created by ```mdml.experiment()``` - in this case `My_MDML_Exp`. Since it is possible that your experiment may need to send data from multiple different places, multiple connections to the MDML can be made with this line of code.  
+  This is the first step in interacting with the MDML. ```mdml.experiment()``` creates an experiment object through which methods for interacting with the MDML are accessed. This line also creates a connection to the MDML that will be used later. All input parameters specified here will be given to you by an MDML admin. From here on out, all methods should be called on the variable created by ```mdml.experiment()``` - in this case `My_MDML_Exp`. Since it is possible that your experiment may need to send data from multiple different places, multiple connections to the MDML can be made with this line of code.
+
+  Parameters:   
+  * experiment_id (str) - MDML experiment ID, given to you by an MDML admin
+  * username (str) - MDML username
+  * passwd (str) - MDML password
+  * host (str) - IP address of the MDML host, given to you by an MDML admin
+  
+  Returns - experiment object 
 
   ```python
   My_MDML_Exp.start_debugger()
