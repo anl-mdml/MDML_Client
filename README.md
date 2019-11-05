@@ -78,6 +78,68 @@ Create a client to easily access the features of the Manufacturing Data & Machin
   This method adds your configuration file to your experiment object - it has not been sent to the MDML yet. The config parameter is explained in detail below. The second parameter is the run ID for the experiment about to be started. A valid run ID can only contain letters and underscores. Reusing a previous run ID will treat the data as if it came from the past experiment regardless of the time elapsed - data files will be appended to where they left off.
   
 
+-------------------------------
+```python
+My_MDML_Exp.send_config()
+```
+This message sends the configuration you added with .add_config() to the MDML. If a debugger has been started, you should see a message regarding the configuration.
+
+
+    # Send the configuration to the MDML
+    My_MDML_Exp.send_config()
+
+    # Publishing data - do this as much and as often as required by your experiment
+    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
+
+    # Analyze data
+    My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
+
+    # Make sure to reset the MDML to end your experiment!
+    My_MDML_Exp.reset()
+
+-------------------------------
+  ```python
+  My_MDML_Exp.publish_data(device_id, data, data_delimiter='null', influxDB = False)
+  ```
+  Parameters:
+  * device_id (str) - device id string that corresponds to a device in the configuration file
+  * data (str) - delimited string of data
+  * data_delimiter (str) - delimiter used in the data parameter
+  * influxDB (bool) - true if data should be stored in InfluxDB, false otherwise
+
+-------------------------------
+  ```python
+  My_MDML_Exp.publish_image(device_id, img_byte_string, timestamp = 0)
+  ```
+  Parameters:
+  * device_id (str) - device id string that corresponds to a device in the configuration file
+  * img_byte_string (str) - string of bytes for the image (output from mdml_client.read_image())
+  * timestamp (str) - unix time in nanseconds when the photo was taken 
+  
+-------------------------------
+  ```python
+  My_MDML_Exp.publish_analysis(queries, function_id, endpoint_id)
+  ```
+  Parameters:
+  * queries (str) - Description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
+  * function_id (str) - From FuncX, id of the function to run
+  * endpoint_id (str) - From FuncX, id of the endpoint to run on
+  
+
+-------------------------------
+```python
+My_MDML_Exp.reset()
+```
+This method must be called in order to end an experiment. A message is sent to the MDML backend that finishes sending data messages and begins archiving all data files for storage. 
+
+-------------------------------
+
+
+<div id="config_syntax"></div>
+
+### MDML Configuration Syntax
+
+
 ### Configuration Documentation
 Every experiment run through the MDML needs to first have a configuration file. This serves to give the MDML context to your data and provide meaningful metadata for your experiments, processes, and data-generating devices. Information in the configuration file should answer questions that the data itself does not. Things like, what units are the data in, what kind of device generated the data, or was an analysis done before sending your data to the MDML? Providing as much information as possible not only increases the data's value for scientific purposes but also minimizes future confusion when you or another researcher want to use the data.
 
@@ -246,71 +308,14 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
   }
 ```
 
--------------------------------
-```python
-My_MDML_Exp.send_config()
-```
-This message sends the configuration you added with .add_config() to the MDML. If a debugger has been started, you should see a message regarding the configuration.
-
-
-    # Send the configuration to the MDML
-    My_MDML_Exp.send_config()
-
-    # Publishing data - do this as much and as often as required by your experiment
-    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
-
-    # Analyze data
-    My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
-
-    # Make sure to reset the MDML to end your experiment!
-    My_MDML_Exp.reset()
-
--------------------------------
-  ```python
-  My_MDML_Exp.publish_data(device_id, data, data_delimiter='null', influxDB = False)
-  ```
-  Parameters:
-  * device_id (str) - device id string that corresponds to a device in the configuration file
-  * data (str) - delimited string of data
-  * data_delimiter (str) - delimiter used in the data parameter
-  * influxDB (bool) - true if data should be stored in InfluxDB, false otherwise
-
--------------------------------
-  ```python
-  My_MDML_Exp.publish_image(device_id, img_byte_string, timestamp = 0)
-  ```
-  Parameters:
-  * device_id (str) - device id string that corresponds to a device in the configuration file
-  * img_byte_string (str) - string of bytes for the image (output from mdml_client.read_image())
-  * timestamp (str) - unix time in nanseconds when the photo was taken 
-  
--------------------------------
-  ```python
-  My_MDML_Exp.publish_analysis(queries, function_id, endpoint_id)
-  ```
-  Parameters:
-  * queries (str) - Description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
-  * function_id (str) - From FuncX, id of the function to run
-  * endpoint_id (str) - From FuncX, id of the endpoint to run on
-  
-
--------------------------------
-```python
-My_MDML_Exp.reset()
-```
-This method must be called in order to end an experiment. A message is sent to the MDML backend that finishes sending data messages and begins archiving all data files for storage. 
-
--------------------------------
-
-
-<div id="config_syntax"></div>
-
-### MDML Configuration Syntax
 
 -------------------------------
 <div id="queries_syntax"></div>
 
 ### MDML Queries Syntax
+ Create queires syntax here
+
+
 
 
 ### Time
