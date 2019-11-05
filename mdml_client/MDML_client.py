@@ -298,11 +298,15 @@ class experiment:
 
         if experiment_run_id != "":
             self.config['experiment']['experiment_run_id'] = experiment_run_id
-
-        # Return to string to prepare for sending to MDML
-        self.config = json.dumps(self.config)
-        print("Valid configuration found, now use .send_config() to send it to the MDML.")
-        return True
+        # Check run id only contains letters and underscores
+        if re.match(r"^[\w]*$", self.config['experiment']['experiment_run_id']):
+            self.config = json.dumps(self.config)
+            print("Valid configuration found, now use .send_config() to send it to the MDML.")
+            # Return to string to prepare for sending to MDML
+            return True
+        else:
+            print("Experiment run ID contains characters other than letters, numbers, and underscores.")
+            return False
 
     def send_config(self):
         """
