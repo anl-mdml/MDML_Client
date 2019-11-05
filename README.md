@@ -289,7 +289,7 @@ This message sends the configuration you added with .add_config() to the MDML. I
   My_MDML_Exp.publish_analysis(queries, function_id, endpoint_id)
   ```
   Parameters:
-  * queries (str) - Description of the data to send to the FuncX function using the syntax below
+  * queries (str) - Description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
   * function_id (str) - From FuncX, id of the function to run
   * endpoint_id (str) - From FuncX, id of the endpoint to run on
   
@@ -301,6 +301,17 @@ My_MDML_Exp.reset()
 This method must be called in order to end an experiment. A message is sent to the MDML backend that finishes sending data messages and begins archiving all data files for storage. 
 
 -------------------------------
+
+
+<div id="config_syntax"></div>
+
+### MDML Configuration Syntax
+
+-------------------------------
+<div id="queries_syntax"></div>
+
+### MDML Queries Syntax
+
 
 ### Time
 This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
