@@ -253,15 +253,45 @@ My_MDML_Exp.send_config()
 This message sends the configuration you added with .add_config() to the MDML. If a debugger has been started, you should see a message regarding the configuration.
 
 
+    # Send the configuration to the MDML
+    My_MDML_Exp.send_config()
+
+    # Publishing data - do this as much and as often as required by your experiment
+    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
+
+    # Analyze data
+    My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
+
+    # Make sure to reset the MDML to end your experiment!
+    My_MDML_Exp.reset()
+
 -------------------------------
   ```python
-  My_MDML_Exp.globus_login()
+  My_MDML_Exp.publish_data(device_id, data, data_delimiter='null', influxDB = False)
   ```
-  This method logs the user in using Globus' authentication. It is only required if FuncX analyses will be run. Upon running, a link will be printed in the console window. Clicking it will open a web browser where you will log in to your globus account and be provided a token. Copy and paste this token in the console window to finish the login.
+  Parameters:
+  * device_id (str) - device id string that corresponds to a device in the configuration file
+  * data (str) - delimited string of data
+  * data_delimiter (str) - delimiter used in the data parameter
+  * influxDB (bool) - true if data should be stored in InfluxDB, false otherwise
+
+-------------------------------
+  ```python
+  My_MDML_Exp.publish_analysis(device_id, img_byte_string, timestamp = 0)
+  ```
+  Parameters:
+  * device_id (str) - device id string that corresponds to a device in the configuration file
+  * img_byte_string (str) - string of bytes for the image (output from mdml_client.read_image())
+  * timestamp (str) - unix time in nanseconds when the photo was taken 
+  
+
+-------------------------------
+```python
+My_MDML_Exp.reset()
+```
+This method must be called in order to end an experiment. A message is sent to the MDML backend that finishes sending data messages and begins archiving all data files for storage. 
 
 -------------------------------
 
 ### Time
 This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
-
-, function_uuid
