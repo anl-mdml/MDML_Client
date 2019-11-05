@@ -337,7 +337,7 @@ Below is an example of the syntax.
 -------------------------------
 
 
-### Helper Functions
+## Helper Functions
 The following function are imported with the MDML python client.
 
 -------------------------------
@@ -362,5 +362,5 @@ Returns - a string of bytes for the image that can be passed directly to the pub
 
 
 
-### Time
+## Time
 This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
