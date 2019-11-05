@@ -420,8 +420,6 @@ class experiment:
             From FuncX, the id of the function to run.  
         endpoint_id : string
             From FuncX, the id of the endpoint to run the function on
-        timestamp : string
-            Unix time the analysis is sent to MDML
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/FUNCX"
