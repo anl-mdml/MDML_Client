@@ -360,6 +360,8 @@ Parameters:
 
 Returns - a string of bytes for the image that can be passed directly to the publish_image method  in experiment objects
 
+## Examples
+Examples of the MDML client can be found on GitHub [here](https://github.com/jelias1/MDML_Client). 
 
 
 ## Time
