@@ -72,7 +72,7 @@ Create a client to easily access the features of the Manufacturing Data & Machin
   My_MDML_Exp.add_config(config, experiment_run_id)
   ```
   Parameters:
-  * config (str | dict) - string to a file path or a dict containing the configuration
+  * config (str | dict) - string to a file path or a dict containing the configuration <a href="#config_syntax">(syntax below)</a>
   * experiment_run_id (str) - string of only letters and underscores to identify the experiment run
   
   This method adds your configuration file to your experiment object - it has not been sent to the MDML yet. The config parameter is explained in detail below. The second parameter is the run ID for the experiment about to be started. A valid run ID can only contain letters and underscores. Reusing a previous run ID will treat the data as if it came from the past experiment regardless of the time elapsed - data files will be appended to where they left off.
