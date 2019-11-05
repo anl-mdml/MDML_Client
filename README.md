@@ -334,7 +334,30 @@ Below is an example of the syntax.
   }
 ]
 ```
+-------------------------------
 
+
+### Client Helper Functions
+The following function are imported with the MDML python client.
+
+-------------------------------
+```python
+mdml_client.unix_time(ret_int = False)
+```
+Parameters:
+* ret_int (bool) - True to return an int, False to return a string
+This function returns the current Unix time in nanoseconds as either an int or a string.
+
+-------------------------------
+```python
+mdml_client.read_image(file_name, resize_x = 0, resize_y = 0)
+```
+Parameters:
+* file_name (str) - file path to the image file to be read
+* resize_x (int) - resize width
+* resize_y (int) - resize height
+
+Returns - a string of bytes for the image that can be passed directly to the publish_image method  in experiment objects
 
 
 
