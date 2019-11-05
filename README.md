@@ -337,7 +337,7 @@ Below is an example of the syntax.
 -------------------------------
 
 
-### Client Helper Functions
+### Helper Functions
 The following function are imported with the MDML python client.
 
 -------------------------------
@@ -346,7 +346,8 @@ mdml_client.unix_time(ret_int = False)
 ```
 Parameters:
 * ret_int (bool) - True to return an int, False to return a string
-This function returns the current Unix time in nanoseconds as either an int or a string.
+This function returns the current Unix time in nanoseconds as either an int or a string. This can be used to add to you data before publishing. If the corresponding data headers in the configuration file is "time", InfluxDB (MDML's time-series database) will use this as the official timestamp for that data entry. Without a "time" variable, InfluxDB will use the timestamp when the data was inserted. This is not ideal since the timestamp does not reflect when the data was actually created.  
+
 
 -------------------------------
 ```python
