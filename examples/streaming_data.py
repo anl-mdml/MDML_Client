@@ -1,0 +1,119 @@
+import time
+import json
+import random
+import mdml_client as mdml # pip install mdml_client #
+
+# Approved experiment ID (supplied by MDML administrators - will not work otherwise)
+Exp_ID = 'TEST'
+# MDML message broker host
+host = 'merf.egs.anl.gov'
+# MDML username and password
+username = 'test'
+password = 'testtest'
+
+
+# Create a configuration for your experiment
+config = {
+    "experiment": {
+        "experiment_id": "TEST",
+        "experiment_notes": "example.py file for MDML python package",
+        "experiment_devices": ["DEVICE_A", "DEVICE_B"]
+    },
+    "devices": [
+        {
+            "device_id": "DEVICE_A",
+            "device_name": "Test device A",
+            "device_output": "random data",
+            "device_output_rate": 1, # in Hertz
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3",
+                "variable4",
+                "variable5"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "DEVICE_B",
+            "device_name": "Test device B",
+            "device_output": "random data",
+            "device_output_rate": 1, # in Hertz
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA"
+            ]
+        }
+    ]
+}
+
+# Create MDML experiment
+My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
+
+# Receive events about your experiment from MDML
+My_MDML_Exp.start_debugger()
+
+# Sleep to let debugger thread set up
+time.sleep(1)
+
+# Add and validate a configuration for the experiment
+My_MDML_Exp.add_config(config, 'streaming_data_example')
+
+# Send configuration file to the MDML
+My_MDML_Exp.send_config() # this starts the experiment
+
+# Sleep to let MDML ingest the configuration
+time.sleep(2)
+
+def random_data(size):
+    dat = []
+    for _ in range(size):
+        dat.append(str(random.random()))
+    return dat
+
+try:
+    while True:
+        # Create random data
+        deviceA_data = '\t'.join(random_data(5))
+        
+        # Send data
+        My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
+        
+        # Repeat for Device B
+        deviceB_data = '\t'.join(random_data(3))
+        My_MDML_Exp.publish_data('DEVICE_B', deviceB_data, '\t', influxDB=True)
+
+        # Sleep to publish data once a second
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Ending MDML experiment")
+finally:
+    My_MDML_Exp.reset()
