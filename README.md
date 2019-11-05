@@ -312,8 +312,28 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
 -------------------------------
 <div id="queries_syntax"></div>
 
-### MDML Queries Syntax
- Create queires syntax here
+### MDML Query Syntax
+The query syntax is used to specify what data should be sent to a FuncX function. Using this syntax, the MDML builds and executes queries for InfluxDB to gather all data that neeeds to be sent to the FuncX function. For each device to be queried, an dictionary should be created with the following three keys:
+* device - value is the device ID specified in the configuration
+* variables - value is a list of variables to be an empty list will grab all variables for the given device
+* last - value is the number of lines to return (most recent lines)
+
+Below is an example of the syntax.
+
+```
+[
+  {
+    "device": "OES_VECTOR",
+    "variables": ["intensity", "wavelength"],
+    "last": 1
+  },
+  {
+    "device": "DEVICE_J",
+    "variables": [],
+    "last" : 2
+  }
+]
+```
 
 
 
