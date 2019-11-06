@@ -414,7 +414,7 @@ class experiment:
         filename : str
             filename to store the file in the MDML. Can only contain letters, 
             numbers, and underscores If left blank filenames are the experiment
-            ID followed by an index (e.i. EXPID_1.JPG, EXPID_2.JPG...)
+            ID followed by an index (e.g. EXPID_1.JPG, EXPID_2.JPG...)
         timestamp : int
             Unix time in nanoseconds. Can be supplied by the unix_time()
             function in this package
