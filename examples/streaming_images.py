@@ -54,11 +54,9 @@ config = {
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Receive events about your experiment from MDML
-def cb(msg_queue):
-    while True:
-        msg = msg_queue.get()
-        print("MESSAGE FROM MDML: " + msg)
-My_MDML_Exp.set_debug_callback(cb)
+def user_func(msg):
+    print("MDML MESSAGE: "+ msg)
+My_MDML_Exp.set_debug_callback(user_func)
 My_MDML_Exp.start_debugger()
 
 # Sleep to let debugger thread set up

@@ -475,7 +475,22 @@ class experiment:
         debug.setDaemon(False)
         debug.start()
 
-    def set_debug_callback(self, func):
+    def set_debug_callback(self, user_func):
+        """
+        Set a function to run every time a message is received from the MDML
+        ...
+
+        Parameters
+        ==========
+        user_func : function
+            Function definition with one parameter. Each message received from 
+            the MDML will trigger this function with the message string as 
+            the parameter.
+        """
+        def func(msg_queue):
+            while True:
+                msg = msg_queue.get()
+                user_func(msg)
         debug_callback = Thread(target=func, args=(self.msg_queue,))
         debug_callback.setDaemon(False)
         debug_callback.start()
