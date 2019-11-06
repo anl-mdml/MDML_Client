@@ -88,15 +88,6 @@ class experiment:
     needs it this way). 
     ...
 
-    Attributes
-    ----------
-    example_device_config : dict
-        example configuration for one device. Device configs are used 
-        in the 'experiment_devices' array in the experiment section 
-        of the config file
-    example_config : dict
-        example configuration used to start an experiment
-
     Methods
     -------
     add_config(config)
@@ -113,55 +104,6 @@ class experiment:
         Creates a separate thread to print messages from MDML regarding
         your experiment
     """
-
-    example_device_config = {
-        "device_id": "EXAMPLE_DEVICE",
-        "device_name": "Test device",
-        "device_version": "1",
-        "device_output": "Random data for testing",
-        "device_output_rate": 0.1,
-        "device_data_type":"text/numeric",
-        "device_notes": "Researcher notes go here",
-        "headers": [
-            "time",
-            "data_row",
-            "experimentor_id",
-            "Temperature 1",
-            "Temperature 2",
-            "Temperature 3",
-            "Note"
-        ],
-        "data_types": [
-            "int",
-            "int",
-            "int",
-            "int",
-            "int",
-            "int",
-            "string"
-        ],
-        "data_units": [
-            "nanoseconds",
-            "count",
-            "NA",
-            "degrees C",
-            "degrees C",
-            "degrees C",
-            "text"
-        ],
-        "save_tsv": True
-    }
-
-    example_config = {
-        "experiment": {
-            "experiment_id": "TEST",
-            "experiment_notes": "example.py file for MDML python package",
-            "experiment_devices": ["EXAMPLE_DEVICE"]
-        },
-        "devices": [
-            example_device_config
-        ]
-    }
 
     def __init__(self, experiment_id, username, passwd, host, port=1883):
         """
@@ -448,7 +390,7 @@ class experiment:
         self.client.publish(topic, json.dumps(payload))
         
       
-    def publish_image(self, device_id, img_byte_string, timestamp = 0):
+    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0):
         """
         Publish an image to MDML
 
@@ -462,6 +404,10 @@ class experiment:
         img_byte_string : bytes
             byte string of the image you want to send. Can be supplied by the
             read_image() function in this package
+        filename : str
+            filename to store the file in the MDML. Can only contain letters, 
+            numbers, and underscores If left blank filenames are the experiment
+            ID followed by an index (e.i. EXPID_1.JPG, EXPID_2.JPG...)
         timestamp : int
             Unix time in nanoseconds. Can be supplied by the unix_time()
             function in this package
@@ -475,9 +421,17 @@ class experiment:
         # Base payload
         payload = {
             'timestamp': timestamp,
+            'filename': filename,
             'data': img_byte_string,
             'data_type': 'image'
         }
+        # Check for valid filename
+        if filename != '':
+            if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
+                print("Filename not valid. Can only contains letters, numbers, and underscores.")
+                return
+            else:
+                payload['filename'] = filename 
         payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)

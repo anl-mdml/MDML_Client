@@ -62,7 +62,9 @@ My_MDML_Exp.send_config() # this starts the experiment
 time.sleep(2)
 
 try:
+    i = 1
     while True:
+        # Generating random images
         random_image = np.random.randint(255, size=(400,500,3), dtype=np.uint8)    
         _, img = cv2.imencode('.jpg', random_image)
         img_bytes = img.tobytes()
@@ -70,7 +72,7 @@ try:
         img_byte_string = img_b64bytes.decode('utf-8')
         
         # Publish image
-        My_MDML_Exp.publish_image('EXAMPLE', img_byte_string, mdml.unix_time())
+        My_MDML_Exp.publish_image('EXAMPLE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
 
         # Sleep to publish data once a second
         time.sleep(.1)
