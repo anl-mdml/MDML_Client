@@ -3,10 +3,17 @@ import json
 import random
 import mdml_client as mdml # pip install mdml_client #
 
+print("**************************************************************************")
+print("*** This example will run indefinitely.                                ***")
+print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
+print("*** Press Ctrl+C again to stop the example.                            ***")
+print("**************************************************************************")
+time.sleep(5)
+
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = 'merf.egs.anl.gov'
+host = '146.137.10.50'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -79,6 +86,11 @@ config = {
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Receive events about your experiment from MDML
+def cb(msg_queue):
+    while True:
+        msg = msg_queue.get()
+        print("MESSAGE FROM MDML: " + msg)
+My_MDML_Exp.set_debug_callback(cb)
 My_MDML_Exp.start_debugger()
 
 # Sleep to let debugger thread set up

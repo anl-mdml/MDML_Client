@@ -1,21 +1,26 @@
-import os
-import re
 import cv2
 import json
-import time
-import tarfile
 import numpy as np
+import os
 import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
-from mdml_client.config import CLIENT_ID
+import queue
+import re
+import tarfile
+import time
 from base64 import b64encode
-from threading import Thread
 from fair_research_login.client import NativeClient
+from mdml_client.config import CLIENT_ID
+from threading import Thread
 
-def on_MDML_message(client, userdata, message):
+def print_MDML_message(client, userdata, message):
+    # self.file_queue.put(message)
     print("******************************** MDML MESSAGE ********************************\n")
     print("%s  :  %s" % (message.topic, message.payload.decode('utf-8')))
     print()
+
+def on_MDML_message(client, userdata, message):
+    userdata.put(message.payload.decode('utf-8'))
 
 def on_MDML_connect(client, userdata, flags, rc):
     print("Connecting to the message broker...")
@@ -131,6 +136,8 @@ class experiment:
         self.host = host
         self.port = port
         self.tokens = None
+        self.msg_queue = queue.Queue()
+        
 
         # Creating connection to MQTT broker
         client = mqtt.Client()
@@ -449,17 +456,29 @@ class experiment:
         Init an MDML debugger to retrieve error messages or other important 
         events when running an experiment.
 
-        """
+        ...
 
+        Returns
+        -------
+        Queue
+            Queue that messages will be pushed to
+
+        """
         debug = Thread(target=subscribe.callback,\
             kwargs={\
                 'callback': on_MDML_message,\
                 'topics': "MDML_DEBUG/" + self.experiment_id,\
                 'hostname':self.host,\
-                'auth': {'username': self.username, 'password': self.password}
+                'auth': {'username': self.username, 'password': self.password},\
+                'userdata': self.msg_queue
             })
         debug.setDaemon(False)
         debug.start()
+
+    def set_debug_callback(self, func):
+        debug_callback = Thread(target=func, args=(self.msg_queue,))
+        debug_callback.setDaemon(False)
+        debug_callback.start()
 
     def replay_experiment(self, filename):
         """
