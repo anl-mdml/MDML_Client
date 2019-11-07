@@ -139,8 +139,7 @@ class experiment:
         scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
         cli = NativeClient(client_id=CLIENT_ID)
         self.tokens = cli.login(refresh_tokens=True, no_local_server=True, 
-                                no_browser=True, requested_scopes=scopes)
-        print(self.tokens) 
+                                no_browser=True, requested_scopes=scopes) 
 
     def add_config(self, config, experiment_run_id=""):
         """
@@ -151,7 +150,7 @@ class experiment:
         Parameters
         ----------
         config : str or dict
-            If string, contains the filepath to a json file with the experiment's configuration
+            If string, contains the filepath to a json file with the experiment's configuration.
             If dict, the dict will be the experiment's configuration
 
         experiment_run_id : str
@@ -426,13 +425,6 @@ class experiment:
         """
         Init an MDML debugger to retrieve error messages or other important 
         events when running an experiment.
-
-
-        Returns
-        -------
-        Queue
-            Queue that messages will be pushed to
-
         """
         debug = Thread(target=subscribe.callback,\
             kwargs={\
