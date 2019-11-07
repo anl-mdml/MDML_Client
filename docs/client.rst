@@ -12,4 +12,5 @@ Helper Function
 ---------------
 
 .. autofunction:: mdml_client.unix_time
-   :members:
+
+.. autofunction:: mdml_client.read_image
