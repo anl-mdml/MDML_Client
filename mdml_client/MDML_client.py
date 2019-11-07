@@ -35,7 +35,6 @@ def unix_time(ret_int=False):
     Get unix time and convert to nanoseconds to match the 
     time resolution in the MDML's InfluxDB.
 
-    ...
 
     Parameters
     ----------
@@ -53,7 +52,7 @@ def read_image(file_name, resize_x=0, resize_y=0):
     """
     Read image from a local file and convert to bytes from sending
     over the MDML.
-    ...
+    
 
     Parameters
     ----------
@@ -145,7 +144,6 @@ class experiment:
         """
         Add a configuration to the experiment
 
-        ...
 
         Parameters
         ----------
