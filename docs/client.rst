@@ -8,8 +8,8 @@ Experiment Class
    :members:
 
 
-Helper Function
----------------
+Helper Functions
+----------------
 
 .. autofunction:: mdml_client.unix_time
 
