@@ -13,20 +13,6 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
-import cv2
-import json
-import numpy as np
-import paho.mqtt.client as mqtt
-import paho.mqtt.subscribe as subscribe
-import queue
-import re
-import tarfile
-import time
-from base64 import b64encode
-from fair_research_login.client import NativeClient
-from mdml_client.config import CLIENT_ID
-from threading import Thread
-import mdml_client as mdml
 
 # -- Project information -----------------------------------------------------
 
