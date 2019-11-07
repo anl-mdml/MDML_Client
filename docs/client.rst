@@ -1,8 +1,15 @@
 MDML Python Client
 ==================
 
-Reference
----------
+Experiment Class
+----------------
 
 .. autoclass:: mdml_client.experiment
+   :members:
+
+
+Helper Function
+---------------
+
+.. automodule:: mdml_client
    :members:
