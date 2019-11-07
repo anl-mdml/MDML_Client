@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/mdml-client/badge/?version=latest)](https://mdml-client.readthedocs.io/en/latest/?badge=latest)
+
 # MDML Client
 
 Create a client to easily access the features of the Manufacturing Data & Machine Learning Layer (MDML).
