@@ -104,23 +104,6 @@ class experiment:
     """
 
     def __init__(self, experiment_id, username, passwd, host, port=1883):
-        """
-        Init an MDML experiment
-
-
-        Parameters
-        ----------
-        experiment_id : str
-            MDML experiment ID, this should have been given to you by an MDML admin
-        username : str
-            MDML username
-        passwd : str
-            Password for the supplied MDML username
-        host : str
-            string for the MDML host running the MQTT message broker
-        port : int
-            port number used by the MDML MQTT message broker (default is 1883)
-        """
         
         self.experiment_id = experiment_id.upper()
         self.username = username
@@ -273,7 +256,6 @@ class experiment:
         """
         Publish vector data to MDML.
 
-        ...
 
         Parameters
         ----------
@@ -320,7 +302,6 @@ class experiment:
         """
         Publish data to MDML
         
-        ...
 
         Parameters
         ----------
@@ -355,7 +336,6 @@ class experiment:
         """
         Publish a message to run an analysis
 
-        ...
 
         Parameters
         ----------
@@ -393,7 +373,6 @@ class experiment:
         """
         Publish an image to MDML
 
-        ...
 
         Parameters
         ----------
@@ -448,7 +427,6 @@ class experiment:
         Init an MDML debugger to retrieve error messages or other important 
         events when running an experiment.
 
-        ...
 
         Returns
         -------
@@ -470,7 +448,7 @@ class experiment:
     def set_debug_callback(self, user_func):
         """
         Set a function to run every time a message is received from the MDML
-        ...
+        
 
         Parameters
         ==========
@@ -491,7 +469,6 @@ class experiment:
         """
         Replay an old experiment by specifying a tar file output from MDML
         
-        ...
         
         Parameters
         ----------
