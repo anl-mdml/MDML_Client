@@ -33,14 +33,19 @@ def on_MDML_connect(client, userdata, flags, rc):
 def unix_time(ret_int=False):
     """
     Get unix time and convert to nanoseconds to match the 
-    time resolution in the MDML's InfluxDB.
+    time resolution of the MDML's time-series database, InfluxDB.
 
 
     Parameters
     ----------
     ret_int : bool
-        True to return the value as type integer. False to 
-        return the value as type string. 
+        True to return time as an integer. False to 
+        return as a string.
+
+    Returns
+    -------
+    string or int
+        Unix time in nanoseconds 
     """
     unix_time = format(time.time() * 1000000000, '.0f') #1,000,000,000
     if ret_int:
@@ -90,25 +95,23 @@ class experiment:
     Parameters
     ----------
     experiment_id : str
-        MDML experiment ID, this should have been given to you by an MDML admin
+        MDML experiment ID, this will be given to you by an MDML admin
     username : str
         MDML username
     passwd : str
         Password for the supplied MDML username
     host : str
-        string for the MDML host running the MQTT message broker
-    port : int
-        port number used by the MDML MQTT message broker (default is 1883)
+        MDML host,  this will be given to you by an MDML admin
     
     """
 
-    def __init__(self, experiment_id, username, passwd, host, port=1883):
+    def __init__(self, experiment_id, username, passwd, host):
         
         self.experiment_id = experiment_id.upper()
         self.username = username
         self.password = passwd
         self.host = host
-        self.port = port
+        self.port = 1883
         self.tokens = None
         self.msg_queue = queue.Queue()
         
@@ -123,7 +126,7 @@ class experiment:
             # Set experiment ID
             client.user_data_set(self.experiment_id)
             # Connect to Mosquitto broker
-            client.connect(host, port, 60)
+            client.connect(self.host, self.port, 60)
             client.loop_start()
             self.client = client
         except ConnectionRefusedError:
@@ -133,7 +136,7 @@ class experiment:
 
     def globus_login(self):
         """
-        Perform a Globus login to acquire auth tokens. Must be done before 
+        Perform a Globus login to acquire auth tokens for FuncX analyses. Must be done before experiment.add_config()
         """
         scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
         cli = NativeClient(client_id=CLIENT_ID)
@@ -142,17 +145,18 @@ class experiment:
 
     def add_config(self, config, experiment_run_id=""):
         """
-        Add a configuration to the experiment
+        Add a configuration to the experiment. Added only locally - use 
+        experiment.send_config() to send to the MDML
 
 
         Parameters
         ----------
         config : str or dict
-            If string, contains the filepath to a json file with the experiment's configuration.
+            If string, contains a filepath to a json file with the experiment's configuration.
             If dict, the dict will be the experiment's configuration
 
         experiment_run_id : str
-            String containing the desired experiment run id
+            String containing the experiment run ID
 
 
         Returns
@@ -270,7 +274,7 @@ class experiment:
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
         influxDB : boolean
-            True if the data should be stored in InfluxDB, False otherwise (default is False)
+            True if the data should be stored in InfluxDB, False otherwise (default is True)
         """
         if type(data) != dict:
             print("Parameter data is not a dictionary.")
@@ -294,8 +298,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
       
-
-    def publish_data(self, device_id, data, data_delimiter='null', influxDB = False):
+    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True):
         """
         Publish data to MDML
         
@@ -303,14 +306,14 @@ class experiment:
         Parameters
         ----------
         device_id : str
-            Unique string identifying the device this data originated from.
-            This should correspond with the experiment's configuration
+            Unique string identifying the device that created the data.
+            This should correspond with the experiment's configuration.
         data : str
             String containing the data to send
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
         influxDB : boolean
-            True if the data should be stored in InfluxDB, False otherwise (default is False) 
+            True if the data should be stored in InfluxDB, False otherwise (default is True) 
         """
 
         # Creating MQTT topic
@@ -337,9 +340,9 @@ class experiment:
         Parameters
         ----------
         queries : list
-            Description of the data to send funcx. See queries format in the documentation
+            Description of the data to send funcx. See queries format in the documentation on GitHub
         function_id : string
-            From FuncX, the id of the function to run.  
+            From FuncX, the id of the function to run
         endpoint_id : string
             From FuncX, the id of the endpoint to run the function on
         """
@@ -365,7 +368,6 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
         
-      
     def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0):
         """
         Publish an image to MDML
@@ -374,11 +376,11 @@ class experiment:
         Parameters
         ----------
         device_id : str
-            Unique string identifying the device this data originated from.
+            Unique string identifying the device that created the data.
             This must correspond with the experiment's configuration
-        img_byte_string : bytes
-            byte string of the image you want to send. Can be supplied by the
-            read_image() function in this package
+        img_byte_string : str
+            byte string of the image you want to send. Can be supplied by
+            mdml_client.read_image() function in this package
         filename : str
             filename to store the file in the MDML. Can only contain letters, 
             numbers, and underscores If left blank filenames are the experiment
@@ -437,13 +439,13 @@ class experiment:
 
     def set_debug_callback(self, user_func):
         """
-        Set a function to run every time a message is received from the MDML
+        Set a function to run every time a message is received from the MDML debugger
         
 
         Parameters
         ==========
         user_func : function
-            Function definition with one parameter. Each message received from 
+            Function that takes one parameter. Each message received from 
             the MDML will trigger this function with the message string as 
             the parameter.
         """
@@ -464,7 +466,6 @@ class experiment:
         ----------
         filename : str
             absolute filepath of the tar file for the experiment you would like to replay.
-            this is format dependent so the file must have been output from the MDML 
         """
         # Validate file
         try:
