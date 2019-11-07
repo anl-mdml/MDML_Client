@@ -73,7 +73,14 @@ time.sleep(1)
 My_MDML_Exp.globus_login()
 
 # Add and validate a configuration for the experiment
-My_MDML_Exp.add_config(config, 'funcx_analysis_example')
+My_MDML_Exp.add_config('./examples_config.json', 'mdml_examples')
+# NOTE: The config variable created earlier is to illustrate the 
+# relevant configuration information for this example. The actual configuration
+# sent to the MDML contains devices for all examples so that different examples can 
+# be run together. However, it is not recommended due to MDML details that are
+# explained in the multiple_clients example scripts.
+# Using the line below is also valid 
+# My_MDML_Exp.add_config(config, 'mdml_examples')
 
 # Send configuration file to the MDML
 My_MDML_Exp.send_config()

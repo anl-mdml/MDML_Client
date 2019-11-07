@@ -1,0 +1,151 @@
+{
+    "experiment": {
+        "experiment_id": "TEST",
+        "experiment_notes": "Publishing vector data example",
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE"]
+    },
+    "devices": [
+        {
+            "device_id": "DEVICE_A",
+            "device_name": "Test device A",
+            "device_output": "random data",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3",
+                "variable4",
+                "variable5"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "DEVICE_B",
+            "device_name": "Test device B",
+            "device_output": "random data",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "CLIENT_A",
+            "device_name": "Test device A",
+            "device_output": "random data",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3",
+                "variable4",
+                "variable5"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "CLIENT_B",
+            "device_name": "Test device B",
+            "device_output": "random data",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "VECTOR",
+            "device_name": "Wavelength/Intensity Vectors",
+            "device_output": "spectrometry data of wavelengths and corresponding intensities",
+            "device_output_rate": 2,
+            "device_data_type": "vector",
+            "device_notes": "wavelengths may vary",
+            "headers" : [
+                "wavelength",
+                "intensity"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "nanometers",
+                "intensity"
+            ],
+            "influx_tags": ["wavelength"]
+        },
+        {
+            "device_id": "IMAGE",
+            "device_name": "Example images",
+            "device_output": "Random images",
+            "device_output_rate": 10,
+            "device_data_type": "image",
+            "device_notes": "Random Images",
+            "headers": [
+                "Image"
+            ],
+            "data_types": [
+                "Image"
+            ],
+            "data_units": [
+                "Image"
+            ]
+        }
+    ]
+}
