@@ -9,9 +9,14 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     pip install mdml_client
 ```
 
-## Usage
+## Documentation
 
-  * The MDML client uses a class named ```experiment``` that provides methods for connecting to the MDML message broker, starting an experiment, publishing data, running analyses, terminating an experiment, and receiving event notifications. Below is an example of a standard use case for the MDML. 
+Check out our [Read the Docs](https://mdml-client.readthedocs.io/en/latest/index.html)
+
+
+## Basic Usage
+
+  * The MDML client uses a class named ```experiment``` that provides methods for connecting to the MDML message broker, starting an experiment, publishing data, running analyses, terminating an experiment, and receiving event notifications. Below is a simplified example of using the MDML. 
   ```python
     import mdml_client as mdml
 
@@ -19,122 +24,49 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
 
     # Start the debugger - prints messages from the MDML about your experiment
+    def user_func(msg):
+        print("MDML MESSAGE: "+ msg)
+    My_MDML_Exp.set_debug_callback(user_func)
     My_MDML_Exp.start_debugger()
 
     # Login to allow FuncX usage. A link will be printed in the console window for authentication. 
     My_MDML_Exp.globus_login()
+    # This method logs the user in using Globus' authentication. It is only 
+    # required if FuncX analyses will be run. Upon running, a link will be 
+    # printed in the console window. Clicking it will open a web browser where
+    # you will log in to your globus account and be provided a token. Copy and
+    # paste this token in the console window to finish the login.
 
     # Validate and locally add a configuration to your experiment
     My_MDML_Exp.add_config({"Your configuration file here"}, "optional_run_id")
+    # This method adds your configuration file to your experiment object - it 
+    # has not been sent to the MDML yet. The config parameter is explained in 
+    # detail below. The second parameter is the run ID for the experiment 
+    # about to be started. A valid run ID can only contain letters and 
+    # underscores. Reusing a previous run ID will treat the data as if it came
+    # from the past experiment regardless of the time elapsed - data files will
+    # be appended to where they left off.
+  
 
     # Send the configuration to the MDML
     My_MDML_Exp.send_config()
+    # This message sends the configuration you added with .add_config() to the
+    # MDML. If a debugger has been started, you should see a message regarding
+    # the configuration.
 
     # Publishing data - do this as much and as often as required by your experiment
     My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
 
     # Analyze data
     My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
+    # A description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
 
     # Make sure to reset the MDML to end your experiment!
     My_MDML_Exp.reset()
+    # This method must be called in order to end an experiment. A message
+    # is sent to the MDML backend that finishes sending data messages and 
+    # begins archiving all data files for storage. 
   ```
-
-## Documentation
-
--------------------------------
-  ```python 
-  My_MDML_Exp = mdml.experiment(experiment_id, username, passwd, host)
-  ```
-  Parameters:   
-  * experiment_id (str) - MDML experiment ID, given to you by an MDML admin
-  * username (str) - MDML username
-  * passwd (str) - MDML password
-  * host (str) - IP address of the MDML host, given to you by an MDML admin
-  
-  Returns - experiment object 
-
-  This is the first step in interacting with the MDML. ```mdml.experiment()``` creates an experiment object through which methods for interacting with the MDML are accessed. This line also creates a connection to the MDML that will be used later. All input parameters specified here will be given to you by an MDML admin. From here on out, all methods should be called on the variable created by ```mdml.experiment()``` - in this case `My_MDML_Exp`. Since it is possible that your experiment may need to send data from multiple different places, multiple connections to the MDML can be made with this line of code.
-
-
--------------------------------
-  ```python
-  My_MDML_Exp.start_debugger()
-  ```
-  Starting the debugger allows you to receive event notifications from the MDML. These notifications will be automatically printed to the console window.
-
--------------------------------
-  ```python
-  My_MDML_Exp.globus_login()
-  ```
-  This method logs the user in using Globus' authentication. It is only required if FuncX analyses will be run. Upon running, a link will be printed in the console window. Clicking it will open a web browser where you will log in to your globus account and be provided a token. Copy and paste this token in the console window to finish the login.
-
--------------------------------
-  ```python
-  My_MDML_Exp.add_config(config, experiment_run_id)
-  ```
-  Parameters:
-  * config (str | dict) - string to a file path or a dict containing the configuration <a href="#config_syntax">(syntax below)</a>
-  * experiment_run_id (str) - string of only letters and underscores to identify the experiment run
-  
-  This method adds your configuration file to your experiment object - it has not been sent to the MDML yet. The config parameter is explained in detail below. The second parameter is the run ID for the experiment about to be started. A valid run ID can only contain letters and underscores. Reusing a previous run ID will treat the data as if it came from the past experiment regardless of the time elapsed - data files will be appended to where they left off.
-  
-
--------------------------------
-```python
-My_MDML_Exp.send_config()
-```
-This message sends the configuration you added with .add_config() to the MDML. If a debugger has been started, you should see a message regarding the configuration.
-
-
-    # Send the configuration to the MDML
-    My_MDML_Exp.send_config()
-
-    # Publishing data - do this as much and as often as required by your experiment
-    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
-
-    # Analyze data
-    My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
-
-    # Make sure to reset the MDML to end your experiment!
-    My_MDML_Exp.reset()
-
--------------------------------
-  ```python
-  My_MDML_Exp.publish_data(device_id, data, data_delimiter='null', influxDB = False)
-  ```
-  Parameters:
-  * device_id (str) - device id string that corresponds to a device in the configuration file
-  * data (str) - delimited string of data
-  * data_delimiter (str) - delimiter used in the data parameter
-  * influxDB (bool) - true if data should be stored in InfluxDB, false otherwise
-
--------------------------------
-  ```python
-  My_MDML_Exp.publish_image(device_id, img_byte_string, timestamp = 0)
-  ```
-  Parameters:
-  * device_id (str) - device id string that corresponds to a device in the configuration file
-  * img_byte_string (str) - string of bytes for the image (output from mdml_client.read_image())
-  * timestamp (str) - unix time in nanseconds when the photo was taken 
-  
--------------------------------
-  ```python
-  My_MDML_Exp.publish_analysis(queries, function_id, endpoint_id)
-  ```
-  Parameters:
-  * queries (str) - Description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
-  * function_id (str) - From FuncX, id of the function to run
-  * endpoint_id (str) - From FuncX, id of the endpoint to run on
-  
-
--------------------------------
-```python
-My_MDML_Exp.reset()
-```
-This method must be called in order to end an experiment. A message is sent to the MDML backend that finishes sending data messages and begins archiving all data files for storage. 
-
--------------------------------
 
 
 <div id="config_syntax"></div>

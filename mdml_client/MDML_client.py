@@ -90,7 +90,7 @@ def read_image(file_name, resize_x=0, resize_y=0):
 
 class experiment:
     """
-    This class allows users to run an experiment with the MDML. 
+    This is the first step in interacting with the MDML. 
     
     Parameters
     ----------
