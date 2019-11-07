@@ -86,35 +86,27 @@ def read_image(file_name, resize_x=0, resize_y=0):
 
 class experiment:
     """
-    This class allows users to run an experiment with the MDML.
-    This includes submiting a configuration, sending data and stopping 
-    the experiment. Also included are some basic helper methods: 
-    unix_time() provides the unix time in nanoseconds (MDML's InfluxDB 
-    needs it this way). 
-    ...
-
-    Methods
-    -------
-    add_config(config)
-        Validates that nothing is wrong with the supplied config file
-    send_config()
-        Sends the configuration dict to MDML to start an experiment
-    publish_data(device_id, data, data_delimiter='null', influx_measurement=False)
-        Publishes data to the MDML message broker
-    publish_image(device_id, img_bytes)
-        Publishes image to the MDML message broker
-    reset()
-        Sends a reset message to MDML to trigger the end of an experiment
-    start_debugger()
-        Creates a separate thread to print messages from MDML regarding
-        your experiment
+    This class allows users to run an experiment with the MDML. 
+    
+    Parameters
+    ----------
+    experiment_id : str
+        MDML experiment ID, this should have been given to you by an MDML admin
+    username : str
+        MDML username
+    passwd : str
+        Password for the supplied MDML username
+    host : str
+        string for the MDML host running the MQTT message broker
+    port : int
+        port number used by the MDML MQTT message broker (default is 1883)
+    
     """
 
     def __init__(self, experiment_id, username, passwd, host, port=1883):
         """
         Init an MDML experiment
 
-        ...
 
         Parameters
         ----------
