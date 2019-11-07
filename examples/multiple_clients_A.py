@@ -20,7 +20,7 @@ print("*************************************************************************
 print("*** This example will run indefinitely.                                ***")
 print("*** Remember to stop all other clients first!                          ***")
 print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the example.                            ***")
+print("*** Press Ctrl+C again to stop the debugger and end the example.       ***")
 print("**************************************************************************")
 time.sleep(5)
 

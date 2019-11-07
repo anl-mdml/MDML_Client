@@ -19,7 +19,6 @@ import mdml_client as mdml # pip install mdml_client #
 print("**************************************************************************")
 print("*** This example will run indefinitely.                                ***")
 print("*** Press Ctrl+C to stop sending data.                                 ***")
-print("*** Press Ctrl+C again to stop the example.                            ***")
 print("**************************************************************************")
 time.sleep(5)
 
