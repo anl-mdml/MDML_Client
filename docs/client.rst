@@ -11,5 +11,5 @@ Experiment Class
 Helper Function
 ---------------
 
-.. automodule:: mdml_client
+.. autofunction:: mdml_client.unix_time
    :members:
