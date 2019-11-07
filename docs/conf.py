@@ -28,7 +28,7 @@ author = 'The MDML Team'
 # ones.
 extensions = [
 	'sphinx.ext.autodoc',
-	'sphinx.etx.napoleon'
+	'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
