@@ -26,11 +26,11 @@ config = {
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Example image streaming with the MDML",
-        "experiment_devices": ["EXAMPLE"]
+        "experiment_devices": ["IMAGE"]
     },
     "devices": [
         {
-            "device_id": "EXAMPLE",
+            "device_id": "IMAGE",
             "device_name": "Example images",
             "device_output": "Random images",
             "device_output_rate": 10, # in Hertz
@@ -89,7 +89,7 @@ try:
         img_byte_string = img_b64bytes.decode('utf-8')
         
         # Publish image
-        My_MDML_Exp.publish_image('EXAMPLE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
+        My_MDML_Exp.publish_image('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
 
         # Sleep to publish data once a second
         time.sleep(.1)
