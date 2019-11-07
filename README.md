@@ -249,7 +249,7 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
 ### MDML Query Syntax
 The query syntax is used to specify what data should be sent to a FuncX function. Using this syntax, the MDML builds and executes queries for InfluxDB to gather all data that neeeds to be sent to the FuncX function. For each device to be queried, an dictionary should be created with the following three keys:
 * device - value is the device ID specified in the configuration
-* variables - value is a list of variables to be an empty list will grab all variables for the given device
+* variables - value is a list of variables to be sent to FuncX. An empty list will grab all variables for the given device
 * last - value is the number of lines to return (most recent lines)
 
 Below is an example of the syntax.
@@ -268,35 +268,3 @@ Below is an example of the syntax.
   }
 ]
 ```
--------------------------------
-
-
-## Helper Functions
-The following function are imported with the MDML python client.
-
--------------------------------
-```python
-mdml_client.unix_time(ret_int = False)
-```
-Parameters:
-* ret_int (bool) - True to return an int, False to return a string
-This function returns the current Unix time in nanoseconds as either an int or a string. This can be used to add to you data before publishing. If the corresponding data headers in the configuration file is "time", InfluxDB (MDML's time-series database) will use this as the official timestamp for that data entry. Without a "time" variable, InfluxDB will use the timestamp when the data was inserted. This is not ideal since the timestamp does not reflect when the data was actually created.  
-
-
--------------------------------
-```python
-mdml_client.read_image(file_name, resize_x = 0, resize_y = 0)
-```
-Parameters:
-* file_name (str) - file path to the image file to be read
-* resize_x (int) - resize width
-* resize_y (int) - resize height
-
-Returns - a string of bytes for the image that can be passed directly to the publish_image method  in experiment objects
-
-## Examples
-Examples of the MDML client can be found on GitHub in the [examples folder](https://github.com/jelias1/MDML_Client/tree/master/examples). 
-
-
-## Time
-This package includes a helper function "unix_time()" which outputs the current unix time in nanoseconds. This can be used to append a timestamp to your data - like in the example above. In the experiment's configuration, the corresponding data header must be "time" which ensures that InfluxDB (MDML's time-series database) will use it properly. Without it, the timestamp will be created by InfluxDB and represent when the data was stored, not when the data was actually generated.
