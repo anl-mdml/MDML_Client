@@ -5,6 +5,8 @@
 
 Welcome to MDML Python Client's documentation!
 ==============================================
+This client connects users to the Manufacturing Data and Machine Learning Layer at
+Argonne National Laboratory.
 
 .. toctree::
 

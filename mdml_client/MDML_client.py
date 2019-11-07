@@ -279,7 +279,7 @@ class experiment:
 
     def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t', influxDB=True):
         """
-        Publish vector data to MDML. The data will be 
+        Publish vector data to MDML.
 
         ...
 
