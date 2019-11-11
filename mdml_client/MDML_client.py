@@ -25,7 +25,7 @@ def on_MDML_message(client, userdata, message):
 def on_MDML_connect(client, userdata, flags, rc):
     print("Connecting to the message broker...")
     if rc == 5:
-        print("Error connecting to broker - check username and password")
+        print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         client.loop_stop(force=True)
     # print("MDML_DEBUG/"+userdata)
     # client.subscribe("MDML_DEBUG/"+userdata)
@@ -130,9 +130,9 @@ class experiment:
             client.loop_start()
             self.client = client
         except ConnectionRefusedError:
-            print("Broker connection was refused. This may be caused by an incorrect username or password.")
+            print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
-            print("Error! Could not connect to MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
+            print("ERROR! Could not connect to the MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
 
     def globus_login(self):
         """
