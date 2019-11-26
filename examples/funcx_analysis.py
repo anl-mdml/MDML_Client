@@ -13,7 +13,7 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = '146.137.10.50'
+host = 'merf.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -105,8 +105,8 @@ try:
         }
     ]
     # FuncX endpoint id and function id
-    funcx_endp_id = "a5c5f716-610e-40e1-9b9c-05c4b9a0a102"
-    funcx_func_id = "ca4ca1a5-abb1-49b1-a5c8-8ce4d3db4138"
+    funcx_endp_id = "3853a3bb-a847-41f8-bab4-e22e8b74ee02"
+    funcx_func_id = "42fff6a1-a8f7-4f92-ae74-3f19d5ac1254"
     # Send data and run analyses indefinitely
     while True:
         # Create random data
