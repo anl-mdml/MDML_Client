@@ -8,6 +8,7 @@ import queue
 import re
 import sys
 import tarfile
+import threading
 import time
 import multiprocessing
 from base64 import b64encode
@@ -528,7 +529,7 @@ class experiment:
         try:
             # Start simulations
             for i in range(len(valid_devices)):
-                tmp = Thread(target=self._replay_file, args=(valid_devices[i], \
+                tmp = threading.Thread(target=self._replay_file, args=(valid_devices[i], \
                                                         exp_dir, \
                                                         device_data_types[i], \
                                                         exp_start_time, \
