@@ -1,12 +1,12 @@
+import sys
 import time
 import json
 import random
 import mdml_client as mdml # pip install mdml_client #
 
 print("**************************************************************************")
-print("*** This example will run indefinitely.                                ***")
-print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the example.                            ***")
+print("*** This example will publish data once every second for 20 seconds.   ***")
+print("*** Press Ctrl+C to stop the example.                                  ***")
 print("**************************************************************************")
 time.sleep(5)
 
@@ -116,21 +116,29 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
+reset = False
 try:
+    i = 0
     while True:
-        # Create random data
-        deviceA_data = '\t'.join(random_data(5))
-        
-        # Send data
-        My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
-        
-        # Repeat for Device B
-        deviceB_data = '\t'.join(random_data(3))
-        My_MDML_Exp.publish_data('DEVICE_B', deviceB_data, '\t', influxDB=True)
+        while i < 20:
+            # Create random data
+            deviceA_data = '\t'.join(random_data(5))
+            
+            # Send data
+            My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
+            
+            # Repeat for Device B
+            deviceB_data = '\t'.join(random_data(3))
+            My_MDML_Exp.publish_data('DEVICE_B', deviceB_data, '\t', influxDB=True)
 
-        # Sleep to publish data once a second
-        time.sleep(1)
+            # Sleep to publish data once a second
+            time.sleep(1)
+            i += 1
+        if not reset:
+            print("Ending MDML experiment")
+            My_MDML_Exp.reset()
+            reset = True
 except KeyboardInterrupt:
-    print("Ending MDML experiment")
-finally:
-    My_MDML_Exp.reset()
+    if not reset:
+        My_MDML_Exp.reset()
+    My_MDML_Exp.stop_debugger()

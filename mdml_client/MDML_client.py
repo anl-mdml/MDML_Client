@@ -6,12 +6,14 @@ import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
 import queue
 import re
+import sys
 import tarfile
 import time
+import multiprocessing
 from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
-from threading import Thread
+
 
 def print_MDML_message(client, userdata, message):
     # self.file_queue.put(message)
@@ -113,7 +115,8 @@ class experiment:
         self.host = host
         self.port = 1883
         self.tokens = None
-        self.msg_queue = queue.Queue()
+        self.msg_queue = multiprocessing.Manager().Queue()
+        self.debugger = None
         
 
         # Creating connection to MQTT broker
@@ -426,7 +429,7 @@ class experiment:
         Init an MDML debugger to retrieve error messages or other important 
         events when running an experiment.
         """
-        debug = Thread(target=subscribe.callback,\
+        self.debugger = multiprocessing.Process(target=subscribe.callback,\
             kwargs={\
                 'callback': on_MDML_message,\
                 'topics': "MDML_DEBUG/" + self.experiment_id,\
@@ -434,8 +437,7 @@ class experiment:
                 'auth': {'username': self.username, 'password': self.password},\
                 'userdata': self.msg_queue
             })
-        debug.setDaemon(False)
-        debug.start()
+        self.debugger.start()            
 
     def set_debug_callback(self, user_func):
         """
@@ -453,9 +455,20 @@ class experiment:
             while True:
                 msg = msg_queue.get()
                 user_func(msg)
-        debug_callback = Thread(target=func, args=(self.msg_queue,))
-        debug_callback.setDaemon(False)
-        debug_callback.start()
+                sys.stdout.flush()
+        self.debug_callback = multiprocessing.Process(target=func, args=(self.msg_queue,))
+        self.debug_callback.start()
+
+    def stop_debugger(self):
+        """
+        Stop an MDML debugger that has already been started
+        """
+        print("Stopping debugger.")
+        if self.debug_callback.is_alive():
+            self.debug_callback.terminate()
+        if self.debugger.is_alive():
+            self.debugger.terminate()
+        print("Debugger stopped.")
 
     def replay_experiment(self, filename):
         """

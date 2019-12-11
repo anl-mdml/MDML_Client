@@ -6,9 +6,10 @@
 # message. It is recommended that only one client be responsible for sending  #
 # the configuration and reset messages. In this example, that client is the   #
 # one in multiple_clients_A.py. This means that multiple_clients_B.py should  #
-# should start after and end before multiple_clients_A.py. Any additional     #
-# clients created will have the same limitations to ensure data is not lost.  #
-# There is no limit to the number of clients streaming data.                  #
+# should start after and end before multiple_clients_A.py. This is also the   #
+# reason that client A runs for 20 seconds and client B runs for only 10      #
+# seconds. Any additional clients will have the same limitations. There is no #
+# limit to the number of clients an experiment can have.                      #
 ###############################################################################
 
 import time
@@ -17,8 +18,8 @@ import random
 import mdml_client as mdml # pip install mdml_client #
 
 print("**************************************************************************")
-print("*** This example will run indefinitely.                                ***")
-print("*** Press Ctrl+C to stop sending data.                                 ***")
+print("*** This example will publish data once a second for 10 seconds.       ***")
+print("*** Press Ctrl+C to stop the example.                                  ***")
 print("**************************************************************************")
 time.sleep(5)
 
@@ -41,14 +42,17 @@ def random_data(size):
     return dat
 
 try:
-    while True:
+    i = 0
+    while i < 10:
         # Create random data
         deviceB_data = '\t'.join(random_data(3))
-        
+
         # Send data        
         My_MDML_Exp.publish_data('CLIENT_B', deviceB_data, '\t', influxDB=True)
 
         # Sleep to publish data once a second
         time.sleep(1)
+        i += 1
+    print("Finished sending data.")
 except KeyboardInterrupt:
-    print("Stop sending CLIENT_B data")
+    print("Stopping CLIENT B")

@@ -6,9 +6,10 @@
 # message. It is recommended that only one client be responsible for sending  #
 # the configuration and reset messages. In this example, that client is the   #
 # one in multiple_clients_A.py. This means that multiple_clients_B.py should  #
-# should start after and end before multiple_clients_A.py. Any additional     #
-# clients created will have the same limitations to ensure data is not lost.  #
-# There is no limit to the number of clients streaming data.                  #
+# should start after and end before multiple_clients_A.py. This is also the   #
+# reason that client A runs for 20 seconds and client B runs for only 10      #
+# seconds. Any additional clients will have the same limitations. There is no #
+# limit to the number of clients an experiment can have.                      #
 ###############################################################################
 
 import time
@@ -17,10 +18,8 @@ import random
 import mdml_client as mdml # pip install mdml_client #
 
 print("**************************************************************************")
-print("*** This example will run indefinitely.                                ***")
-print("*** Remember to stop all other clients first!                          ***")
-print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the debugger and end the example.       ***")
+print("*** This example will publish data once a second for 20 seconds.       ***")
+print("*** Press Ctrl+C to stop the example.                                  ***")
 print("**************************************************************************")
 time.sleep(5)
 
@@ -130,17 +129,25 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
+reset = False
 try:
+    i = 0
     while True:
-        # Create random data
-        deviceA_data = '\t'.join(random_data(5))
-        
-        # Send data
-        My_MDML_Exp.publish_data('CLIENT_A', deviceA_data, '\t', influxDB=True)
+        while i < 20: # publish data 20 times
+            # Create random data
+            deviceA_data = '\t'.join(random_data(5))
+            
+            # Send data
+            My_MDML_Exp.publish_data('CLIENT_A', deviceA_data, '\t', influxDB=True)
 
-        # Sleep to publish data once a second
-        time.sleep(1)
+            # Sleep to publish data once a second
+            time.sleep(1)
+            i += 1
+        if not reset:
+            print("Ending MDML experiment")
+            My_MDML_Exp.reset()
+            reset = True
 except KeyboardInterrupt:
-    print("Ending MDML experiment")
-finally:
-    My_MDML_Exp.reset()
+    if not reset:
+        My_MDML_Exp.reset()
+    My_MDML_Exp.stop_debugger()

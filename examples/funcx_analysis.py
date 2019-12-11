@@ -4,9 +4,8 @@ import random
 import mdml_client as mdml # pip install mdml_client #
 
 print("**************************************************************************")
-print("*** This example will run indefinitely.                                ***")
-print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the example.                            ***")
+print("*** This example will publish data 5 times and then call an analysis.  ***")
+print("*** Press Ctrl+C to stop the example.                                  ***")
 print("**************************************************************************")
 time.sleep(5)
 
@@ -94,39 +93,43 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
-try:
-    # Init vars for funcx analysis
-    i = 1
-    queries = [
-        {
-            "device": "DEVICE_A",
-            "variables": [],
-            "last" : 1
-        }
-    ]
-    # FuncX endpoint id and function id
-    funcx_endp_id = "3853a3bb-a847-41f8-bab4-e22e8b74ee02"
-    funcx_func_id = "42fff6a1-a8f7-4f92-ae74-3f19d5ac1254"
-    # Send data and run analyses indefinitely
-    while True:
-        # Create random data
-        deviceA_data = '\t'.join(random_data(5))
-        
-        # Send data
-        My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
+# Init vars for funcx analysis
+queries = [
+    {
+        "device": "DEVICE_A",
+        "variables": [],
+        "last" : 1
+    }
+]
+# FuncX endpoint id and function id
+funcx_endp_id = "3853a3bb-a847-41f8-bab4-e22e8b74ee02"
+funcx_func_id = "42fff6a1-a8f7-4f92-ae74-3f19d5ac1254"
 
-        # run funcx analysis
-        if i % 5 == 0:
-            # Send message to start analysis
-            My_MDML_Exp.publish_analysis(queries, funcx_func_id, funcx_endp_id)
-        
-        # Sleep to send data once a second
-        i += 1
-        if i == 6:
-            raise KeyboardInterrupt
-        time.sleep(.9)
+reset = False
+try:
+    i = 1
+    while True:
+        # Send 5 datapoints and then an analyses
+        while i < 6:
+            # Create random data
+            deviceA_data = '\t'.join(random_data(5))
+            
+            # Send data
+            My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
+
+            # run funcx analysis
+            if i % 5 == 0:
+                # Send message to start analysis
+                My_MDML_Exp.publish_analysis(queries, funcx_func_id, funcx_endp_id)
+            
+            # Sleep to send data once a second
+            i += 1
+            time.sleep(.9)
+        if not reset:
+            print("Ending MDML experiment")
+            My_MDML_Exp.reset()
+            reset = True
 except KeyboardInterrupt:
-    print("Ending MDML experiment")
-finally:
-    time.sleep(3)
-    My_MDML_Exp.reset()
+    if not reset:
+        My_MDML_Exp.reset()
+    My_MDML_Exp.stop_debugger()

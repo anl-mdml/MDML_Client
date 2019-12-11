@@ -20,11 +20,10 @@ import json
 import random
 import mdml_client as mdml # pip install mdml_client #
 
-print("**************************************************************************")
-print("*** This example will run indefinitely.                                ***")
-print("*** Press Ctrl+C to stop sending data and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the debugger and end the example.       ***")
-print("**************************************************************************")
+print("***************************************************************************")
+print("*** This example will publish data once every 3 seconds for 30 seconds. ***")
+print("*** Press Ctrl+C to stop the example.                                   ***")
+print("***************************************************************************")
 time.sleep(5)
 
 Exp_ID = 'TEST'
@@ -100,21 +99,25 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
+reset = False
 try:
+    i = 0
     while True:
-        # Create random data
-        dat['intensity'] = random_data(101)
+        while i < 10: # publish data 10 times
+            # Create random data
+            dat['intensity'] = random_data(101)
 
-        # Send data to MDML
-        My_MDML_Exp.publish_vector_data('VECTOR', dat, mdml.unix_time())
+            # Send data to MDML
+            My_MDML_Exp.publish_vector_data('VECTOR', dat, mdml.unix_time())
 
-        # Sleep to publish data every three seconds
-        time.sleep(3)
+            # Sleep to publish data every three seconds
+            time.sleep(3)
+            i += 1
+        if not reset:
+            print("Ending MDML experiment")
+            My_MDML_Exp.reset()
+            reset = True
 except KeyboardInterrupt:
-    print("Ending MDML experiment")
-finally:
-    My_MDML_Exp.reset()
-
-# Make sure to reset the MDML to end your experiment!
-time.sleep(10)
-My_MDML_Exp.reset()
+    if not reset:
+        My_MDML_Exp.reset()
+    My_MDML_Exp.stop_debugger()

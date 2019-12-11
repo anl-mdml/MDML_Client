@@ -7,9 +7,8 @@ from base64 import b64encode
 import mdml_client as mdml # pip install mdml_client #
 
 print("****************************************************************************")
-print("*** This example will run indefinitely.                                  ***")
-print("*** Press Ctrl+C to stop sending images and send the MDML reset message. ***")
-print("*** Press Ctrl+C again to stop the example.                              ***")
+print("*** This example publish an image 10 times a second for 30 seconds.      ***")
+print("*** Press Ctrl+C to stop the example.                                    ***")
 print("****************************************************************************")
 time.sleep(5)
 
@@ -78,22 +77,30 @@ My_MDML_Exp.send_config() # this starts the experiment
 # Sleep to let MDML ingest the configuration
 time.sleep(2)
 
+reset = False
+
 try:
     i = 1
     while True:
-        # Generating random images
-        random_image = np.random.randint(255, size=(400,500,3), dtype=np.uint8)    
-        _, img = cv2.imencode('.jpg', random_image)
-        img_bytes = img.tobytes()
-        img_b64bytes = b64encode(img_bytes)
-        img_byte_string = img_b64bytes.decode('utf-8')
-        
-        # Publish image
-        My_MDML_Exp.publish_image('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
+        while i < 300:
+            # Generating random images
+            random_image = np.random.randint(255, size=(400,500,3), dtype=np.uint8)    
+            _, img = cv2.imencode('.jpg', random_image)
+            img_bytes = img.tobytes()
+            img_b64bytes = b64encode(img_bytes)
+            img_byte_string = img_b64bytes.decode('utf-8')
+            
+            # Publish image
+            My_MDML_Exp.publish_image('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
 
-        # Sleep to publish data once a second
-        time.sleep(.1)
+            # Sleep to publish data once a second
+            time.sleep(.1)
+            i += 1
+        if not reset:
+            print("Ending MDML experiment")
+            My_MDML_Exp.reset()
+            reset = True
 except KeyboardInterrupt:
-    print("Ending MDML experiment")
-finally:
-    My_MDML_Exp.reset()
+    if not reset:
+        My_MDML_Exp.reset()
+    My_MDML_Exp.stop_debugger()
