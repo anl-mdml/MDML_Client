@@ -56,7 +56,7 @@ def unix_time(ret_int=False):
     else:
         return unix_time
 
-def read_image(file_name, resize_x=0, resize_y=0):
+def _read_image_file(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
     """
     Read image from a local file and convert to bytes from sending
     over the MDML.
@@ -91,6 +91,44 @@ def read_image(file_name, resize_x=0, resize_y=0):
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
+def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
+    """
+    Read image from a local file and convert to bytes from sending
+    over the MDML.
+    
+
+    Parameters
+    ----------
+    file_name : string
+        file name of the file to be opened
+    resize_x : int
+        horizontal size of the resized image
+    resize_y : int
+        vertical size of the resized image
+    rescale_pixel_intensity : bool
+        scale the pixel intensities between 0-255 according to the min and max pixel values.
+
+    Returns
+    -------
+    string
+        String of bytes that can be used as the second argument in 
+        experiment.publish_image()
+    """
+    source = cv2.imread(file_name, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+    if resize_x != 0 and resize_y != 0:
+        source = cv2.resize(source, (resize_x, resize_y))
+    if rescale_pixel_intensity:
+        source = np.nan_to_num(source)
+        min_val = np.min(source)
+        max_val = np.max(source)
+        source = (source - min_val) * (255/max_val)
+    _, img = cv2.imencode('.jpg', source)
+    img_bytes = img.tobytes()
+    img_b64bytes = b64encode(img_bytes)
+    img_byte_string = img_b64bytes.decode('utf-8')
+    return img_byte_string
+
+
 class experiment:
     """
     This is the first step in interacting with the MDML. 
@@ -116,8 +154,9 @@ class experiment:
         self.host = host
         self.port = 1883
         self.tokens = None
-        self.msg_queue = multiprocessing.Manager().Queue()
+        self.msg_queue = None
         self.debugger = None
+        self.debug_callback = None
         
 
         # Creating connection to MQTT broker
@@ -452,6 +491,7 @@ class experiment:
             the MDML will trigger this function with the message string as 
             the parameter.
         """
+        self.msg_queue = multiprocessing.Manager().Queue()
         def func(msg_queue):
             while True:
                 msg = msg_queue.get()
