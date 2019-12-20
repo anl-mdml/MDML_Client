@@ -102,8 +102,26 @@ queries = [
     }
 ]
 # FuncX endpoint id and function id
-funcx_endp_id = "3853a3bb-a847-41f8-bab4-e22e8b74ee02"
-funcx_func_id = "42fff6a1-a8f7-4f92-ae74-3f19d5ac1254"
+funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
+funcx_func_id = "b5d83b0a-2c1e-48fc-a61f-fb7eae58c960" # sums variables 1 thru 5
+
+# # The function below was registered with funcx to get the above func_id
+# def sum_vars(data):
+#     var_sum = float(data[0][0]['variable1']) + float(data[0][0]['variable2']) + float(data[0][0]['variable3']) + float(data[0][0]['variable4']) + float(data[0][0]['variable5'])
+#     return str(var_sum)
+#
+# # The input parameter from MDML looks like this:
+# [[{
+#   'time': '2019-12-20T18:23:09.883Z', 
+#   'variable1': 0.7148689571386346, 
+#   'variable2': 0.3303284415100972, 
+#   'variable3': 0.7029252964954437, 
+#   'variable4': 0.5739044292459075, 
+#   'variable5': 0.09692214917245678
+# }]]
+#
+# # The return value is a string, for example:
+# '2.4817439194'
 
 reset = False
 try:
@@ -120,12 +138,13 @@ try:
             # run funcx analysis
             if i % 5 == 0:
                 # Send message to start analysis
-                My_MDML_Exp.publish_analysis(queries, funcx_func_id, funcx_endp_id)
+                My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id, funcx_endp_id)
             
             # Sleep to send data once a second
             i += 1
             time.sleep(.9)
         if not reset:
+            time.sleep(2)
             print("Ending MDML experiment")
             My_MDML_Exp.reset()
             reset = True

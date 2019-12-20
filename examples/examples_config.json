@@ -2,7 +2,7 @@
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Publishing vector data example",
-        "experiment_devices": ["DEVICE_A", "DEVICE_B", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE"]
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "ANALYSIS"]
     },
     "devices": [
         {
@@ -145,6 +145,25 @@
             ],
             "data_units": [
                 "Image"
+            ]
+        },
+        {
+            "device_id": "ANALYSIS",
+            "device_name": "Example analysis",
+            "device_output": "Sum of 5 numbers",
+            "device_output_rate": 0.01,
+            "device_data_type": "text/numeric",
+            "device_notes": "Sums variable1-variable5",
+            "analysis_results": true,
+            "estimated_runtime_ms": 1000,
+            "headers": [
+                "sum"
+            ],
+            "data_types": [
+                "sum"
+            ],
+            "data_units": [
+                "sum"
             ]
         }
     ]
