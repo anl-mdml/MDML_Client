@@ -95,7 +95,7 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
     """
     Read image from a local file and convert to bytes from sending
     over the MDML.
-    
+
 
     Parameters
     ----------
@@ -375,13 +375,15 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, queries, function_id, endpoint_id):
+    def publish_analysis(self, device_id, queries, function_id, endpoint_id):
         """
         Publish a message to run an analysis
 
 
         Parameters
         ----------
+        device_id : string
+            Device ID for storing analysis results (must match configuration file)
         queries : list
             Description of the data to send funcx. See queries format in the documentation on GitHub
         function_id : string
@@ -390,7 +392,7 @@ class experiment:
             From FuncX, the id of the endpoint to run the function on
         """
         # Creating MQTT topic
-        topic = "MDML/" + self.experiment_id + "/FUNCX"
+        topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
 
         # Set message payload
         payload = {
