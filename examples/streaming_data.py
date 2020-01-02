@@ -13,7 +13,8 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = 'merf.egs.anl.gov'
+host = 'merfpoc.egs.anl.gov'
+#host = 'merf.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -87,7 +88,15 @@ My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Receive events about your experiment from MDML
 def user_func(msg):
-    print("MDML MESSAGE: "+ msg)
+    msg_obj = json.loads(msg)
+    if msg_obj['type'] == "NOTE":
+        print(f'MDML NOTE: {msg_obj["message"]}')
+    elif msg_obj['type'] == "ERROR":
+        print(f'MDML ERROR: {msg_obj["message"]}')
+    elif msg_obj['type'] == "RESULTS":
+        print(f'MDML ANALYSIS RESULT FOR "{msg_obj["analysis_id"]}": {msg_obj["message"]}')
+    else:
+        print("ERROR WITHIN MDML, CONTACT ADMINS.")
 My_MDML_Exp.set_debug_callback(user_func)
 My_MDML_Exp.start_debugger()
 

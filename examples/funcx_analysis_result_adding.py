@@ -1,10 +1,15 @@
 import time
 import json
 import random
+import multiprocessing
 import mdml_client as mdml # pip install mdml_client #
 
 print("**************************************************************************")
-print("*** This example will publish data 5 times and then call an analysis.  ***")
+print("*** This example will publish the number 1 then call a FuncX function  ***")
+print("*** that simply adds 1. The result is returned through the debugger    ***")
+print("*** and that new value is publish as the next data point. This example ***")
+print("*** is used to illustrate how analysis results can be used to guide an ***")
+print("*** experiment.                                                        ***")
 print("*** Press Ctrl+C to stop the example.                                  ***")
 print("**************************************************************************")
 time.sleep(5)
@@ -22,47 +27,35 @@ config = {
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "example.py file for MDML python package",
-        "experiment_devices": ["DEVICE_A", "ANALYSIS"]
+        "experiment_devices": ["DEVICE_F", "ADD1"]
     },
     "devices": [
         {
-            "device_id": "DEVICE_A",
-            "device_name": "Test device A",
-            "device_output": "random data",
+            "device_id": "DEVICE_F",
+            "device_name": "Test device F",
+            "device_output": "integer",
             "device_output_rate": 1, # in Hertz
             "device_data_type": "text/numeric",
-            "device_notes": "Random data generated and streamed for example purposes",
+            "device_notes": "Integer increasing by 1",
             "headers" : [
-                "variable1",
-                "variable2",
-                "variable3",
-                "variable4",
-                "variable5"
+                "count"
             ],
             "data_types" : [
-                "numeric",
-                "numeric",
-                "numeric",
-                "numeric",
                 "numeric"
             ],
             "data_units" : [
-                "NA",
-                "NA",
-                "NA",
-                "NA",
                 "NA"
             ]
         },
         {
-            "device_id": "ANALYSIS",
-            "device_name": "Example analysis",
-            "device_output": "Sum of 5 numbers",
+            "device_id": "ADD1",
+            "device_name": "Example function",
+            "device_output": "Add 1 to a number",
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
-            "device_notes": "Sums variable1-variable5",
+            "device_notes": "Add 1 to something",
             "analysis_results": True,
-            "estimated_runtime_ms": 1000,
+            "estimated_runtime_ms": 100,
             "headers": [
                 "sum"
             ],
@@ -80,6 +73,10 @@ config = {
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Receive events about your experiment from MDML
+# results returned and publishing logic will be in separate processes
+add1_result_queue = multiprocessing.Manager().Queue() # passes results between processes
+
+
 def user_func(msg):
     msg_obj = json.loads(msg)
     if msg_obj['type'] == "NOTE":
@@ -88,8 +85,11 @@ def user_func(msg):
         print(f'MDML ERROR: {msg_obj["message"]}')
     elif msg_obj['type'] == "RESULTS":
         print(f'MDML ANALYSIS RESULT FOR "{msg_obj["analysis_id"]}": {msg_obj["message"]}')
+        if msg_obj['analysis_id'] == "ADD1":
+            add1_result_queue.put(msg_obj["message"])
     else:
         print("ERROR WITHIN MDML, CONTACT ADMINS.")
+
 My_MDML_Exp.set_debug_callback(user_func)
 My_MDML_Exp.start_debugger()
 # Sleep to let debugger thread set up
@@ -114,66 +114,51 @@ My_MDML_Exp.send_config()
 # Sleep to let MDML ingest the configuration
 time.sleep(2)
 
-def random_data(size):
-    dat = []
-    for _ in range(size):
-        dat.append(str(random.random()))
-    return dat
-
 # Init vars for funcx analysis
 queries = [
     {
-        "device": "DEVICE_A",
+        "device": "DEVICE_F",
         "variables": [],
         "last" : 1
     }
 ]
 # FuncX endpoint id and function id
 funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
-funcx_func_id = "b5d83b0a-2c1e-48fc-a61f-fb7eae58c960" # sums variables 1 thru 5
-funcx_slow_func_id = "ade1483b-b58c-4ec2-a3f6-ddadce316653"
+funcx_func_id = "c966b543-1611-4534-9e14-599f456e1a45" # Adds 1 to the value supplied
 
 # # The function below was registered with funcx to get the above func_id
-# def sum_vars(data):
-#     import time
-#     time.sleep(5)
-#     var_sum = float(data[0][0]['variable1']) + float(data[0][0]['variable2']) + float(data[0][0]['variable3']) + float(data[0][0]['variable4']) + float(data[0][0]['variable5'])
-#     return str(var_sum)
+# def add1(data):
+#     val = data[0][0]['count']
+#     val += 1
+#     return str(val)
 #
 # # The input parameter from MDML looks like this:
 # [[{
 #   'time': '2019-12-20T18:23:09.883Z', 
-#   'variable1': 0.7148689571386346, 
-#   'variable2': 0.3303284415100972, 
-#   'variable3': 0.7029252964954437, 
-#   'variable4': 0.5739044292459075, 
-#   'variable5': 0.09692214917245678
+#   'count': 1
 # }]]
 #
-# # The return value is a string: '2.4817439194'
+# # The return value is a string: '2'
 
 reset = False
+CURR_DATA = 0 # integer to publish first
+i = 0 # loop index
 try:
-    i = 1
     while True:
-        # Send 5 datapoints and then an analyses
         while i < 6:
-            # Create random data
-            deviceA_data = '\t'.join(random_data(5))
-            
+            # Do not update CURR_DATA the first time (there would be no results anyway)
+            if i != 0:
+                CURR_DATA = add1_result_queue.get() # .get() is blocking
             # Send data
-            My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
+            My_MDML_Exp.publish_data('DEVICE_F', str(CURR_DATA), '\t', influxDB=True)
 
-            # run funcx analysis
-            if i % 5 == 0:
-                # Send message to start analysis
-                My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_slow_func_id, funcx_endp_id)
+            # Send message to start analysis
+            My_MDML_Exp.publish_analysis("ADD1", queries, funcx_func_id, funcx_endp_id)
             
-            # Sleep to send data once a second
+            # Inc loop index
             i += 1
-            time.sleep(.9)
         if not reset:
-            time.sleep(10)
+            time.sleep(5)
             print("Ending MDML experiment")
             My_MDML_Exp.reset()
             reset = True

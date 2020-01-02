@@ -2,7 +2,7 @@
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Publishing vector data example",
-        "experiment_devices": ["DEVICE_A", "DEVICE_B", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "ANALYSIS"]
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "ANALYSIS", "ADD1"]
     },
     "devices": [
         {
@@ -54,6 +54,23 @@
             "data_units" : [
                 "NA",
                 "NA",
+                "NA"
+            ]
+        },
+        {
+            "device_id": "DEVICE_F",
+            "device_name": "Test device F",
+            "device_output": "integer",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Integer increasing by 1",
+            "headers" : [
+                "count"
+            ],
+            "data_types" : [
+                "numeric"
+            ],
+            "data_units" : [
                 "NA"
             ]
         },
@@ -156,6 +173,25 @@
             "device_notes": "Sums variable1-variable5",
             "analysis_results": true,
             "estimated_runtime_ms": 1000,
+            "headers": [
+                "sum"
+            ],
+            "data_types": [
+                "sum"
+            ],
+            "data_units": [
+                "sum"
+            ]
+        },
+        {
+            "device_id": "ADD1",
+            "device_name": "Example function",
+            "device_output": "Add 1 to a number",
+            "device_output_rate": 0.01,
+            "device_data_type": "text/numeric",
+            "device_notes": "Add 1 to something",
+            "analysis_results": true,
+            "estimated_runtime_ms": 100,
             "headers": [
                 "sum"
             ],

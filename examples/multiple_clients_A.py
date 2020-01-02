@@ -100,7 +100,15 @@ My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 
 # Receive events about your experiment from MDML
 def user_func(msg):
-    print("MDML MESSAGE: "+ msg)
+    msg_obj = json.loads(msg)
+    if msg_obj['type'] == "NOTE":
+        print(f'MDML NOTE: {msg_obj["message"]}')
+    elif msg_obj['type'] == "ERROR":
+        print(f'MDML ERROR: {msg_obj["message"]}')
+    elif msg_obj['type'] == "RESULTS":
+        print(f'MDML ANALYSIS RESULT FOR "{msg_obj["analysis_id"]}": {msg_obj["message"]}')
+    else:
+        print("ERROR WITHIN MDML, CONTACT ADMINS.")
 My_MDML_Exp.set_debug_callback(user_func)
 My_MDML_Exp.start_debugger()
 
