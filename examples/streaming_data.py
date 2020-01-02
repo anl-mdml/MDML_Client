@@ -13,8 +13,7 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = 'merfpoc.egs.anl.gov'
-#host = 'merf.egs.anl.gov'
+host = 'merf.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'

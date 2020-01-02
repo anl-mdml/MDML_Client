@@ -76,7 +76,6 @@ My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
 # results returned and publishing logic will be in separate processes
 add1_result_queue = multiprocessing.Manager().Queue() # passes results between processes
 
-
 def user_func(msg):
     msg_obj = json.loads(msg)
     if msg_obj['type'] == "NOTE":
