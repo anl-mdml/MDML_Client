@@ -479,7 +479,7 @@ class experiment:
                 'auth': {'username': self.username, 'password': self.password},\
                 'userdata': self.msg_queue
             })
-        self.debugger.start()            
+        self.debugger.start()
 
     def set_debug_callback(self, user_func):
         """
