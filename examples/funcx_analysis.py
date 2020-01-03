@@ -130,25 +130,26 @@ queries = [
 ]
 # FuncX endpoint id and function id
 funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
-funcx_func_id = "b5d83b0a-2c1e-48fc-a61f-fb7eae58c960" # sums variables 1 thru 5
-funcx_slow_func_id = "ade1483b-b58c-4ec2-a3f6-ddadce316653"
+funcx_func_id = "d513405d-3bd4-49ad-922a-62107e98feb2" # sums variables 1 thru 5
+funcx_slow_func_id = "49624e16-067f-4a1a-9375-290a728eef50"
 
 # # The function below was registered with funcx to get the above func_id
-# def sum_vars(data):
-#     import time
-#     time.sleep(5)
-#     var_sum = float(data[0][0]['variable1']) + float(data[0][0]['variable2']) + float(data[0][0]['variable3']) + float(data[0][0]['variable4']) + float(data[0][0]['variable5'])
-#     return str(var_sum)
+def sum_vars(data):
+    import time
+    time.sleep(5)
+    row = data['DEVICE_A'][0]
+    var_sum = float(row['variable1']) + float(row['variable2']) + float(row['variable3']) + float(row['variable4']) + float(row['variable5'])
+    return str(var_sum)
 #
 # # The input parameter from MDML looks like this:
-# [[{
+# { "DEVICE_A": [{
 #   'time': '2019-12-20T18:23:09.883Z', 
 #   'variable1': 0.7148689571386346, 
 #   'variable2': 0.3303284415100972, 
 #   'variable3': 0.7029252964954437, 
 #   'variable4': 0.5739044292459075, 
 #   'variable5': 0.09692214917245678
-# }]]
+# }]}
 #
 # # The return value is a string: '2.4817439194'
 

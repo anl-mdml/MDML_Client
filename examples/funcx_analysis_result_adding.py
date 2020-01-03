@@ -123,13 +123,13 @@ queries = [
 ]
 # FuncX endpoint id and function id
 funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
-funcx_func_id = "c966b543-1611-4534-9e14-599f456e1a45" # Adds 1 to the value supplied
+funcx_func_id = "ba584634-1785-45a9-81cf-5927ecc80fd8" # Adds 1 to the value supplied
 
 # # The function below was registered with funcx to get the above func_id
-# def add1(data):
-#     val = data[0][0]['count']
-#     val += 1
-#     return str(val)
+def add1(data):
+    val = data['DEVICE_F'][0]['count']
+    val += 1
+    return str(val)
 #
 # # The input parameter from MDML looks like this:
 # [[{
@@ -140,7 +140,7 @@ funcx_func_id = "c966b543-1611-4534-9e14-599f456e1a45" # Adds 1 to the value sup
 # # The return value is a string: '2'
 
 reset = False
-CURR_DATA = 0 # integer to publish first
+CURR_DATA = 1 # integer to publish first
 i = 0 # loop index
 try:
     while True:
