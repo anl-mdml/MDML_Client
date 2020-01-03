@@ -171,7 +171,7 @@
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
             "device_notes": "Sums variable1-variable5",
-            "analysis_results": true,
+            "store_results": true,
             "estimated_runtime_ms": 1000,
             "headers": [
                 "sum"
@@ -190,7 +190,7 @@
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
             "device_notes": "Add 1 to something",
-            "analysis_results": true,
+            "store_results": true,
             "estimated_runtime_ms": 100,
             "headers": [
                 "sum"

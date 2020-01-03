@@ -10,63 +10,15 @@ Create a client to easily access the features of the Manufacturing Data & Machin
 
 ## Documentation
 
-Check out our [Read the Docs](https://mdml-client.readthedocs.io/en/latest/index.html)
+Check out the [Read the Docs](https://mdml-client.readthedocs.io/en/latest/index.html)
 
 
 ## Basic Usage
 
-  * The MDML client uses a class named ```experiment``` that provides methods for connecting to the MDML message broker, starting an experiment, publishing data, running analyses, terminating an experiment, and receiving event notifications. Below is a simplified example of using the MDML. 
-  ```python
-    import mdml_client as mdml
+There are several examples in the examples folder which demonstrate how to use the MDML. The `streaming_data.py` example is the best place to start. Each example file highlights a different feature of the MDML.  
 
-    # Create an MDML experiment
-    My_MDML_Exp = mdml.experiment("EXPERIMENT_ID", "USERNAME", "PASSWORD", "HOST.IP.ADDRESS")
-
-    # Start the debugger - prints messages from the MDML about your experiment
-    def user_func(msg):
-        print("MDML MESSAGE: "+ msg)
-    My_MDML_Exp.set_debug_callback(user_func)
-    My_MDML_Exp.start_debugger()
-
-    # Login to allow FuncX usage. A link will be printed in the console window for authentication. 
-    My_MDML_Exp.globus_login()
-    # This method logs the user in using Globus' authentication. It is only 
-    # required if FuncX analyses will be run. Upon running, a link will be 
-    # printed in the console window. Clicking it will open a web browser where
-    # you will log in to your globus account and be provided a token. Copy and
-    # paste this token in the console window to finish the login.
-
-    # Validate and locally add a configuration to your experiment
-    My_MDML_Exp.add_config({"Your configuration file here"}, "optional_run_id")
-    # This method adds your configuration file to your experiment object - it 
-    # has not been sent to the MDML yet. The config parameter is explained in 
-    # detail below. The second parameter is the run ID for the experiment 
-    # about to be started. A valid run ID can only contain letters and 
-    # underscores. Reusing a previous run ID will treat the data as if it came
-    # from the past experiment regardless of the time elapsed - data files will
-    # be appended to where they left off.
+The MDML's Python client uses a class named ```experiment``` to provides methods for connecting to the MDML message broker, starting an experiment, publishing data, running analyses, terminating an experiment, and receiving event notifications. 
   
-
-    # Send the configuration to the MDML
-    My_MDML_Exp.send_config()
-    # This message sends the configuration you added with .add_config() to the
-    # MDML. If a debugger has been started, you should see a message regarding
-    # the configuration.
-
-    # Publishing data - do this as much and as often as required by your experiment
-    My_MDML_Exp.publish_data(device_id, data, data_delimiter, use_influxDB)
-
-    # Analyze data
-    My_MDML_Exp.publish_analysis(queries, function_uuid, endpoint_uuid)
-    # A description of the data to send to the FuncX function using the <a href="#queries_syntax">syntax below</a>
-
-    # Make sure to reset the MDML to end your experiment!
-    My_MDML_Exp.reset()
-    # This method must be called in order to end an experiment. A message
-    # is sent to the MDML backend that finishes sending data messages and 
-    # begins archiving all data files for storage. 
-  ```
-
 
 <div id="config_syntax"></div>
 
@@ -74,11 +26,11 @@ Check out our [Read the Docs](https://mdml-client.readthedocs.io/en/latest/index
 
 
 ### Configuration Documentation
-Every experiment run through the MDML needs to first have a configuration file. This serves to give the MDML context to your data and provide meaningful metadata for your experiments, processes, and data-generating devices. Information in the configuration file should answer questions that the data itself does not. Things like, what units are the data in, what kind of device generated the data, or was an analysis done before sending your data to the MDML? Providing as much information as possible not only increases the data's value for scientific purposes but also minimizes future confusion when you or another researcher want to use the data.
+Every experiment run through the MDML needs to first have a configuration file. This serves to give the MDML context to your data and provide meaningful metadata for your experiments, processes, and data-generating devices. Information in the configuration file should answer questions that the data itself does not. Things like, what units are the data in, what kind of device generated the data, or was an analysis done before sending your data to the MDML? Providing as much information as possible not only increases the data's value for scientific purposes but also minimizes future confusion when you or another researcher want to use the data again.
 
-The configuration of an experiment serves as metadata for each device/sensor generating data and for the experiment itself. The configuration also allows the MDML to warn you and prevent any bad data from being published. We highly recommend taking the time to craft a detailed configuration so that if used in the future, any researcher would be able to understand your experiment and data.
+The configuration of an experiment serves as metadata for each device/sensor generating data and for the experiment itself. The configuration also allows the MDML to warn you and prevent bad data from being published. We highly recommend taking the time to craft a detailed configuration so that if used in the future, any researcher will be able to understand your experiment and data.
 
-The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki/JSON). It consist of two parts, an `experiment` section and a `devices` section. The experiment section is for general experiment notes and the list of devices that will generate data. The devices section contains an entry for each device listed in the experiment section. In each section, there are required fields and optional fields that control the MDML's behavior while streaming data. Furthermore, it is possible to create any additional fields you wish as long as the field's name is not already used by a required or optional field. Below is an in depth description of the configuration file.
+The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki/JSON). It consist of two parts, an `experiment` section and a `devices` section. The experiment section is for general experiment notes and the list of devices and analyses that will generate data. The devices section contains an entry for each device or analysis listed in the experiment section. In each section, there are required fields and optional fields that control the MDML's behavior while streaming data. Furthermore, it is possible to create any additional fields you wish as long as the field's name is not already used by a required or optional field. Below is an in-depth description of the configuration file.
 
 
 ###     Experiment Section
@@ -122,6 +74,7 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
 
 #### Optional Fields:
 
+* store_results - true if the MDML should save the analysis results, false otherwise 
 * melt_data - Contains more data on how to melt the data (see the melting data section below) 
     * keep
         * List of variables to keep the same (must have been listed in the `headers` field)
@@ -243,18 +196,25 @@ The configuration file must be a [valid JSON file](https://en.wikipedia.org/wiki
 
 
 -------------------------------
+<div id="real_time_analysis"></div>
+
+### Real-Time Analysis
+The MDML enables real-time analysis of experimental data through the FuncX service. Analyses are described in the devices section of a configuration. An extra key, `store_results`, set to `true` can be added so that results are saved for immediate dashboard access or later retrieval in experiment files. If this option is used, the output of the function must be a tab-delimited string. The string's data must correspond to the headers listed in its device section.
+
+
+-------------------------------
 <div id="queries_syntax"></div>
 
 ### MDML Query Syntax
-The query syntax is used to specify what data should be sent to a FuncX function. Using this syntax, the MDML builds and executes queries for InfluxDB to gather all data that neeeds to be sent to the FuncX function. For each device to be queried, an dictionary should be created with the following three keys:
+This query syntax is used to specify what data should be sent to a FuncX analysis function. Using this syntax, the MDML builds and executes queries for InfluxDB to gather all data that neeeds to be sent to the FuncX function. For each device to be queried, a dictionary should be created with the following keys:
 * device - value is the device ID specified in the configuration
 * variables - value is a list of variables to be sent to FuncX. An empty list will grab all variables for the given device
 * last - value is the number of lines to return (most recent lines)
-* where - value is an object. Keys are the variable name and the corresponding value is what the variable should equal in the query
-* time_start - value is an integer for the unix time in nanoseconds where the returned points should start 
-* time_end - value is an integer for the unix time in nanoseconds where the returned points should stop
+* where (optional) - value is an object. Keys are the variable name and the corresponding value is what the variable should equal in the query
+* time_start (optional) - value is an integer for the unix time in nanoseconds where the returned points should start 
+* time_end (optional) - value is an integer for the unix time in nanoseconds where the returned points should stop
  
-Below is an example of the syntax.
+Below is an example of the syntax. This structure is the `queries` parameter of the .publish_analysis() method. 
 
 ```
 [
@@ -277,25 +237,16 @@ Below is an example of the syntax.
 ]
 ```
 
-```
-{
-  "OES_VECTOR": [
-    {row 1}
-  ],
-  "DEVICE_J": [
-    {row 2}
-  ]
-}
-```
+
 -------------------------------
 <div id="funcx_payload"></div>
 
 ### MDML-to-FuncX Payload Syntax
-When running a real-time analysis with the MDML, data is fed to FuncX using the above query syntax. This section will help you understand the structure of the data returned by a query. This understanding is needed in order to properly write a function to use with FuncX. 
+When running a real-time analysis with the MDML, data is fed to FuncX using the above query syntax. This section will help you understand the structure of the data returned by a query. This understanding is essential in order to properly write a function for FuncX that will be compatible with the MDML. 
 
-In short, the structure of the data that is returned from a query is an object where the keys correspond to device IDs that were queried and the values are lists containing objects for each point sorted newest to oldest. 
+In short, the structure of the data that is returned from an MDML query is an object where the keys correspond to device IDs that were queried and the values are lists of objects for each point - sorted newest to oldest. Each object contains the queried variables as well as the timestamp (Unix time in nanoseconds) for that entry. The example below will help visualize this.
 
-For example, a query like:
+A query like this...
 ```json
 [
   {
@@ -316,7 +267,7 @@ For example, a query like:
 ]
 ```
 
-Would return a data structure like:
+will return a data structure like this...
 ```json
 {
   "OES_VECTOR": [
@@ -333,3 +284,4 @@ Would return a data structure like:
 Things to Note:
 * The list for Device J contains 2 elements because the query parameter `last` was set to 2.
 * The `...` in the Device J data points are to inllustrate that all variables have been returned since the `variables` query parameter was set to `[]`
+
