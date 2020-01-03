@@ -276,3 +276,60 @@ Below is an example of the syntax.
   }
 ]
 ```
+
+```
+{
+  "OES_VECTOR": [
+    {row 1}
+  ],
+  "DEVICE_J": [
+    {row 2}
+  ]
+}
+```
+-------------------------------
+<div id="funcx_payload"></div>
+
+### MDML-to-FuncX Payload Syntax
+When running a real-time analysis with the MDML, data is fed to FuncX using the above query syntax. This section will help you understand the structure of the data returned by a query. This understanding is needed in order to properly write a function to use with FuncX. 
+
+In short, the structure of the data that is returned from a query is an object where the keys correspond to device IDs that were queried and the values are lists containing objects for each point sorted newest to oldest. 
+
+For example, a query like:
+```json
+[
+  {
+    "device": "OES_VECTOR",
+    "variables": ["intensity", "wavelength"],
+    "last": 1,
+    "where": {
+      "wavelength": 250
+    }
+  },
+  {
+    "device": "DEVICE_J",
+    "variables": [],
+    "last" : 2,
+    "time_end": 1577426558192850000
+
+  }
+]
+```
+
+Would return a data structure like:
+```json
+{
+  "OES_VECTOR": [
+    {"time": 1577426558193450000, "intensity": 1023, "wavelength": 250}
+  ],
+  "DEVICE_J": [
+    {"time": 1577426558192850000, "variable1": 0.48275, "variable2": 0.49021, ...},
+    {"time": 1577426558192830000, "variable1": 0.90321, "variable2": 0.98281, ...}
+  ]
+}
+
+```
+
+Things to Note:
+* The list for Device J contains 2 elements because the query parameter `last` was set to 2.
+* The `...` in the Device J data points are to inllustrate that all variables have been returned since the `variables` query parameter was set to `[]`
