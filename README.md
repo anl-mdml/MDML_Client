@@ -250,7 +250,10 @@ The query syntax is used to specify what data should be sent to a FuncX function
 * device - value is the device ID specified in the configuration
 * variables - value is a list of variables to be sent to FuncX. An empty list will grab all variables for the given device
 * last - value is the number of lines to return (most recent lines)
-
+* where - value is an object. Keys are the variable name and the corresponding value is what the variable should equal in the query
+* time_start - value is an integer for the unix time in nanoseconds where the returned points should start 
+* time_end - value is an integer for the unix time in nanoseconds where the returned points should stop
+ 
 Below is an example of the syntax.
 
 ```
@@ -259,11 +262,17 @@ Below is an example of the syntax.
     "device": "OES_VECTOR",
     "variables": ["intensity", "wavelength"],
     "last": 1
+    "where": {
+      "wavelength": 250
+    }
   },
   {
     "device": "DEVICE_J",
     "variables": [],
     "last" : 2
+    "time_start": 1577426400000000000,
+    "time_end": 1577426500000000000
+
   }
 ]
 ```
