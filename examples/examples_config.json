@@ -2,7 +2,7 @@
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Publishing vector data example",
-        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "ANALYSIS", "ADD1"]
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "IMAGE_ANALYSIS", "ANALYSIS", "ADD1"]
     },
     "devices": [
         {
@@ -154,6 +154,23 @@
             "device_output_rate": 10,
             "device_data_type": "image",
             "device_notes": "Random Images",
+            "headers": [
+                "Image"
+            ],
+            "data_types": [
+                "Image"
+            ],
+            "data_units": [
+                "Image"
+            ]
+        },
+        {
+            "device_id": "IMAGE_ANALYSIS",
+            "device_name": "Example images that have been analyzed",
+            "device_output": "Analyzed images",
+            "device_output_rate": 10,
+            "device_data_type": "image",
+            "device_notes": "Analyzed Images",
             "headers": [
                 "Image"
             ],
