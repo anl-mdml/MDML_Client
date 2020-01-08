@@ -214,9 +214,9 @@ This query syntax is used to specify what data should be sent to a FuncX analysi
 * time_start (optional) - value is an integer for the unix time in nanoseconds where the returned points should start 
 * time_end (optional) - value is an integer for the unix time in nanoseconds where the returned points should stop
  
-Below is an example of the syntax. This structure is the `queries` parameter of the .publish_analysis() method. 
+Below is an example of the syntax. This structure is supplied to the `queries` parameter of the .publish_analysis() method. 
 
-```
+```json
 [
   {
     "device": "OES_VECTOR",
@@ -237,6 +237,14 @@ Below is an example of the syntax. This structure is the `queries` parameter of 
 ]
 ```
 
+If a device that you would like to query produces images, only use the keys: device, variables, and last. The variables value should be an empty list. Support for the other keys is on the way. 
+
+```json
+{
+  "device": "IMAGE_DEVICE",
+  "variables": [],
+  "last": 5
+}
 
 -------------------------------
 <div id="funcx_payload"></div>
@@ -284,4 +292,5 @@ will return a data structure like this...
 Things to Note:
 * The list for Device J contains 2 elements because the query parameter `last` was set to 2.
 * The `...` in the Device J data points are to inllustrate that all variables have been returned since the `variables` query parameter was set to `[]`
+
 
