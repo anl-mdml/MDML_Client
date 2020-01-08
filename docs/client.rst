@@ -14,3 +14,5 @@ Helper Functions
 .. autofunction:: mdml_client.unix_time
 
 .. autofunction:: mdml_client.read_image
+
+.. autofunction:: mdml_client.GET_images
