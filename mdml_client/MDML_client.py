@@ -10,6 +10,7 @@ import sys
 import tarfile
 import threading
 import time
+import requests
 import multiprocessing
 from base64 import b64encode
 from fair_research_login.client import NativeClient
@@ -127,6 +128,32 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
     img_b64bytes = b64encode(img_bytes)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
+
+def GET_images(image_metadata, experiment_id, host):
+    """
+    Retrieves images from the MDML using a GET request. Created for
+    use in FuncX functions that analyze images.
+
+
+    Parameters
+    ----------
+    image_metadata : list
+        list of dicts of image metadata. From the query value for the image-generating device
+    host : string
+        Hostname/IP of the MDML host
+    experiment_id : string
+        MDML Experiment ID
+
+    Returns
+    -------
+    list
+        List of bytes, one element for each image from the metadata
+    """
+    imgs = []
+    for img in image_metadata:
+        resp = requests.get(f"http://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}")
+        imgs.append(resp.content)
+    return imgs
 
 
 class experiment:
