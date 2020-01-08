@@ -2,7 +2,7 @@
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Publishing vector data example",
-        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "ANALYSIS", "ADD1"]
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "IMAGE_ANALYSIS", "ANALYSIS", "ADD1"]
     },
     "devices": [
         {
@@ -165,13 +165,30 @@
             ]
         },
         {
+            "device_id": "IMAGE_ANALYSIS",
+            "device_name": "Example images that have been analyzed",
+            "device_output": "Analyzed images",
+            "device_output_rate": 10,
+            "device_data_type": "image",
+            "device_notes": "Analyzed Images",
+            "headers": [
+                "Image"
+            ],
+            "data_types": [
+                "Image"
+            ],
+            "data_units": [
+                "Image"
+            ]
+        },
+        {
             "device_id": "ANALYSIS",
             "device_name": "Example analysis",
             "device_output": "Sum of 5 numbers",
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
             "device_notes": "Sums variable1-variable5",
-            "analysis_results": true,
+            "store_results": true,
             "estimated_runtime_ms": 1000,
             "headers": [
                 "sum"
@@ -190,7 +207,7 @@
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
             "device_notes": "Add 1 to something",
-            "analysis_results": true,
+            "store_results": true,
             "estimated_runtime_ms": 100,
             "headers": [
                 "sum"

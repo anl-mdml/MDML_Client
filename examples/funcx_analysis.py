@@ -129,9 +129,11 @@ queries = [
     }
 ]
 # FuncX endpoint id and function id
-funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
 funcx_func_id = "d513405d-3bd4-49ad-922a-62107e98feb2" # sums variables 1 thru 5
-funcx_slow_func_id = "49624e16-067f-4a1a-9375-290a728eef50"
+# funcx_func_id = "49624e16-067f-4a1a-9375-290a728eef50" # sums vars 1-5 with sleep
+funcx_endp_id = "9e4d0e7e-f957-4d7b-ae8a-dce8872dfa46" # 146.137.10.50 endpoint
+# funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
+# funcx_endp_id = "53703665-746d-4af5-8d3f-2e811b4f9bbe" # merf.egs.anl.gov endpoint
 
 # # The function below was registered with funcx to get the above func_id
 def sum_vars(data):
@@ -166,13 +168,13 @@ try:
             My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
 
             # run funcx analysis
-            if i % 5 == 0:
-                # Send message to start analysis
-                My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_slow_func_id, funcx_endp_id)
+            time.sleep(.2)
+            # Send message to start analysis
+            My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id, funcx_endp_id)
             
             # Sleep to send data once a second
             i += 1
-            time.sleep(.9)
+            time.sleep(.7)
         if not reset:
             time.sleep(10)
             print("Ending MDML experiment")
