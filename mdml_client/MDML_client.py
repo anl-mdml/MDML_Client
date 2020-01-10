@@ -508,6 +508,12 @@ class experiment:
             })
         self.debugger.start()
 
+    def disconnect(self):
+        """
+        Disconnect MQTT client from the broker
+        """
+        self.client.disconnect()
+
     def set_debug_callback(self, user_func):
         """
         Set a function to run every time a message is received from the MDML debugger
