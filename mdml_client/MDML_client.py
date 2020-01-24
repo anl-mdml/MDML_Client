@@ -564,6 +564,7 @@ class experiment:
         Disconnect MQTT client from the broker
         """
         self.client.disconnect()
+        print("Disconnected from MDML.")
 
     def set_debug_callback(self, user_func):
         """
