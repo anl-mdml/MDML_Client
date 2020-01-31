@@ -368,7 +368,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
       
-    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True):
+    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True, timestamp = 0):
         """
         Publish data to MDML
         
@@ -398,7 +398,8 @@ class experiment:
             payload['data_delimiter'] = data_delimiter
         if influxDB:
             payload['influx_measurement'] = device_id.upper()
-        
+        # Added for system timings
+        payload['timestamp'] = unix_time()
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
@@ -443,7 +444,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
         
-    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0):
+    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
         """
         Publish an image to MDML
 
@@ -458,32 +459,39 @@ class experiment:
             mdml_client.read_image() function in this package
         filename : str
             filename to store the file in the MDML. Can only contain letters, 
-            numbers, and underscores If left blank filenames are the experiment
-            ID followed by an index (e.g. EXPID_1.JPG, EXPID_2.JPG...)
+            numbers, underscores and must end with a valid file extension. 
+            If left blank, filenames will the experiment ID followed by an
+            index (e.g. EXPID_1.JPG, EXPID_2.JPG...)
         timestamp : int
             Unix time in nanoseconds. Can be supplied by the unix_time()
             function in this package
+        metadata : dict
+            Dictionary containing any metadata for the image. Data types of 
+            the dictionary values must not be changed. 
         """
 
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
-        # Data checks
-        if timestamp == 0:
-            timestamp = unix_time()
         # Base payload
         payload = {
-            'timestamp': timestamp,
             'filename': filename,
             'data': img_byte_string,
             'data_type': 'image'
         }
+        # Adding metadata if necessary
+        if metadata != {}:
+            payload.metadata = metadata
         # Check for valid filename
         if filename != '':
             if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
                 print("Filename not valid. Can only contains letters, numbers, and underscores.")
                 return
             else:
-                payload['filename'] = filename 
+                payload['filename'] = filename
+        # Adding timing code
+        if timestamp == 0:
+            timestamp = unix_time()
+        payload['timestamp'] = timestamp
         payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)

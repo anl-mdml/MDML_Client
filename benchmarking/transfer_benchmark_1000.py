@@ -7,7 +7,8 @@ from base64 import b64encode
 import mdml_client as mdml # pip install mdml_client #
 
 print("****************************************************************************")
-print("*** This example publish an image 10 times a second for 30 seconds.      ***")
+print("*** This benchmark sends messages of varying size (1KB to 10MB). 1000    ***")
+print("*** messasges per size.                                                  ***")
 print("*** Press Ctrl+C to stop the example.                                    ***")
 print("****************************************************************************")
 time.sleep(5)
@@ -15,8 +16,8 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-#host = 'merf.egs.anl.gov'
-host = 'merfpoc.egs.anl.gov'
+host = 'merf.egs.anl.gov'
+#host = 'merfpoc.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -114,79 +115,81 @@ try:
     i = 0
     while True:
         while i < 13000:
+            # if i < 1000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(750)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '1KB')
+            #     time.sleep(.1)
+
+            # elif i < 2000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(1500)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '2KB')
+            #     time.sleep(.1)
+
+            # elif i < 3000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(3750)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '5KB')
+            #     time.sleep(.1)
+
+            # elif i < 4000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(7500)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10KB')
+            #     time.sleep(.5)
+
+            # elif i < 5000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(18750)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '25KB')
+            #     time.sleep(.5)
+
+            # elif i < 6000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(37500)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '50KB')
+            #     time.sleep(1)
+
+            # elif i < 7000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(75000)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '100KB')
+            #     time.sleep(1)
+
+            # elif i < 8000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(187500)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '250KB')
+            #     time.sleep(1)
+
+            # elif i < 9000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(375000)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '500KB')
+            #     time.sleep(1)
+
+            # elif i < 10000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(750000)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '1MB')
+            #     time.sleep(1)
+
+            # elif i < 11000:
+            #     # Generating random images
+            #     img_byte_string = b64encode(np.random.bytes(1500000)).decode('utf-8')
+            #     My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '2MB')
+            #     time.sleep(1)
+
+            # elif i < 12000:
             if i < 1000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(750)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '1KB')
-                time.sleep(.1)
-
-            elif i < 2000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(1500)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '2KB')
-                time.sleep(.1)
-
-            elif i < 3000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(3750)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '5KB')
-                time.sleep(.1)
-
-            elif i < 4000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(7500)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10KB')
-                time.sleep(.5)
-
-            elif i < 5000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(18750)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '25KB')
-                time.sleep(.5)
-
-            elif i < 6000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(37500)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '50KB')
-                time.sleep(1)
-
-            elif i < 7000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(75000)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '100KB')
-                time.sleep(1)
-
-            elif i < 8000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(187500)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '250KB')
-                time.sleep(1)
-
-            elif i < 9000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(375000)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '500KB')
-                time.sleep(1)
-
-            elif i < 10000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(750000)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '1MB')
-                time.sleep(1)
-
-            elif i < 11000:
-                # Generating random images
-                img_byte_string = b64encode(np.random.bytes(1500000)).decode('utf-8')
-                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '2MB')
-                time.sleep(1)
-
-            elif i < 12000:
                 # Generating random images
                 img_byte_string = b64encode(np.random.bytes(3750000)).decode('utf-8')
                 My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '5MB')
                 time.sleep(1.5)
 
-            elif i < 13000:
+            # elif i < 13000:
+            elif i < 2000:
                 # Generating random images
                 img_byte_string = b64encode(np.random.bytes(7500000)).decode('utf-8')
                 My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10MB')

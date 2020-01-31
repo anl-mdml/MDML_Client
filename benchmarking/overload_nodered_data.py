@@ -2,6 +2,7 @@ import time
 import json
 import numpy as np
 import cv2
+import random
 from base64 import b64encode
 
 import mdml_client as mdml # pip install mdml_client #
@@ -19,35 +20,6 @@ host = "merfpoc.egs.anl.gov"
 # MDML username and password
 username = 'test'
 password = 'testtest'
-
-# Creating experiment configuration
-config = {
-    "experiment": {
-        "experiment_id": "TEST",
-        "experiment_notes": "Example image streaming with the MDML",
-        "experiment_devices": ["IMAGE"]
-    },
-    "devices": [
-        {
-            "device_id": "IMAGE",
-            "device_name": "Example images",
-            "device_output": "Random images",
-            "device_output_rate": 10, # in Hertz
-            "device_data_type": "image",
-            "device_notes": "Random Images",
-            "headers": [
-                "PLIF"
-            ],
-            "data_types": [
-                "Image"
-            ],
-            "data_units": [
-                "Image"
-            ]
-        }
-    ]
-}
-
 
 # Create MDML experiment
 My_MDML_Exp = mdml.experiment(Exp_ID, username, password, host)
@@ -69,15 +41,34 @@ My_MDML_Exp.start_debugger()
 # Sleep to let debugger thread set up
 time.sleep(1)
 
+num_points = 12000
+headers = []
+for i in range(num_points):
+    headers.append("var"+str(i))
+
+config = {
+    "experiment": {
+        "experiment_id": "TEST",
+        "experiment_notes": "Example image streaming with the MDML",
+        "experiment_devices": ["LARGE_DATA"]
+    },
+    "devices": [
+        {
+            "device_id": "LARGE_DATA",
+            "device_name": "Example images",
+            "device_output": "Random images",
+            "device_output_rate": 0.01, # in Hertz
+            "device_data_type": "image",
+            "device_notes": "Random Images",
+            "headers": headers,
+            "data_types": headers,
+            "data_units": headers
+        }
+    ]
+}
+
 # Add and validate a configuration for the experiment
-My_MDML_Exp.add_config('./examples_config.json', 'mdml_examples')
-# NOTE: The config variable created earlier is to illustrate the 
-# relevant configuration information for this example. The actual configuration
-# sent to the MDML contains devices for all examples so that different examples can 
-# be run together. However, it is not recommended due to MDML details that are
-# explained in the multiple_clients example scripts.
-# Using the line below is also valid 
-# My_MDML_Exp.add_config(config, 'mdml_examples')
+My_MDML_Exp.add_config(config, 'mdml_examples')
 
 # Send configuration file to the MDML
 My_MDML_Exp.send_config() # this starts the experiment
@@ -87,16 +78,21 @@ time.sleep(2)
 
 reset = False
 
-import os
+def random_data(size):
+    dat = []
+    for _ in range(size):
+        dat.append(str(random.random()))
+    return dat
 
 try:
     i = 0
+    dat = '\t'.join(random_data(num_points))
     while True:
         while i < 100000000:
-            # Generating random images
-            img_byte_string = b64encode(np.random.bytes(3750000)).decode('utf-8')
-            My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10MB')
+            # Generating data
+            My_MDML_Exp.publish_data('LARGE_DATA', dat, "\t", timestamp=mdml.unix_time())
             print(i)
+            time.sleep(0.05)
             i += 1
         if not reset:
             print("Ending MDML experiment")
