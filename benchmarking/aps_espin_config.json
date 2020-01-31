@@ -1,0 +1,26 @@
+{
+    "experiment": {
+        "experiment_id": "ESPIN",
+        "experiment_notes": "Example image streaming with the MDML",
+        "experiment_devices": ["IMAGE"]
+    },
+    "devices": [
+        {
+            "device_id": "IMAGE",
+            "device_name": "Example images",
+            "device_output": "Random images",
+            "device_output_rate": 10,
+            "device_data_type": "image",
+            "device_notes": "Random Images",
+            "headers": [
+                "APS"
+            ],
+            "data_types": [
+                "Image"
+            ],
+            "data_units": [
+                "Image"
+            ]
+        }
+    ]
+}

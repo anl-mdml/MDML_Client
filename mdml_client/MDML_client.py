@@ -368,7 +368,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
       
-    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True):
+    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True, timestamp = 0):
         """
         Publish data to MDML
         
@@ -398,11 +398,12 @@ class experiment:
             payload['data_delimiter'] = data_delimiter
         if influxDB:
             payload['influx_measurement'] = device_id.upper()
-        
+        # Added for system timings
+        payload['timestamp'] = unix_time()
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, device_id, queries, function_id, endpoint_id):
+    def publish_analysis(self, device_id, queries, function_id, endpoint_id, parameters={}):
         """
         Publish a message to run an analysis
 
@@ -417,6 +418,8 @@ class experiment:
             From FuncX, the id of the function to run
         endpoint_id : string
             From FuncX, the id of the endpoint to run the function on
+        parameters : any json serializable type
+            Custom parameters to be accessed in the second element of your FuncX data parameter
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
@@ -426,7 +429,8 @@ class experiment:
             'queries': queries,
             'function_id': function_id,
             'endpoint_id': endpoint_id,
-            'timestamp': unix_time()
+            'timestamp': unix_time(),
+            'parameters': parameters
         }
 
         # Add auth if set
@@ -440,7 +444,59 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
         
-    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0):
+    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
+        """
+        Publish an image to MDML
+
+
+        Parameters
+        ----------
+        device_id : str
+            Unique string identifying the device that created the data.
+            This must correspond with the experiment's configuration
+        img_byte_string : str
+            byte string of the image you want to send. Can be supplied by
+            mdml_client.read_image() function in this package
+        filename : str
+            filename to store the file in the MDML. Can only contain letters, 
+            numbers, underscores and must end with a valid file extension. 
+            If left blank, filenames will the experiment ID followed by an
+            index (e.g. EXPID_1.JPG, EXPID_2.JPG...)
+        timestamp : int
+            Unix time in nanoseconds. Can be supplied by the unix_time()
+            function in this package
+        metadata : dict
+            Dictionary containing any metadata for the image. Data types of 
+            the dictionary values must not be changed. 
+        """
+
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Base payload
+        payload = {
+            'filename': filename,
+            'data': img_byte_string,
+            'data_type': 'image'
+        }
+        # Adding metadata if necessary
+        if metadata != {}:
+            payload.metadata = metadata
+        # Check for valid filename
+        if filename != '':
+            if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
+                print("Filename not valid. Can only contains letters, numbers, and underscores.")
+                return
+            else:
+                payload['filename'] = filename
+        # Adding timing code
+        if timestamp == 0:
+            timestamp = unix_time()
+        payload['timestamp'] = timestamp
+        payload = json.dumps(payload)
+        # Publish it
+        self.client.publish(topic, payload)
+
+    def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
         """
         Publish an image to MDML
 
@@ -460,6 +516,8 @@ class experiment:
         timestamp : int
             Unix time in nanoseconds. Can be supplied by the unix_time()
             function in this package
+        size : string
+            Size of the message being sent
         """
 
         # Creating MQTT topic
@@ -472,7 +530,8 @@ class experiment:
             'timestamp': timestamp,
             'filename': filename,
             'data': img_byte_string,
-            'data_type': 'image'
+            'data_type': 'image',
+            'size': size
         }
         # Check for valid filename
         if filename != '':
@@ -507,6 +566,13 @@ class experiment:
                 'userdata': self.msg_queue
             })
         self.debugger.start()
+
+    def disconnect(self):
+        """
+        Disconnect MQTT client from the broker
+        """
+        self.client.disconnect()
+        print("Disconnected from MDML.")
 
     def set_debug_callback(self, user_func):
         """
