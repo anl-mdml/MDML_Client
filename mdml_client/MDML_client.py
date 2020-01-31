@@ -467,7 +467,8 @@ class experiment:
             function in this package
         metadata : dict
             Dictionary containing any metadata for the image. Data types of 
-            the dictionary values must not be changed. 
+            the dictionary values must not be changed. Keys cannot include
+            "time" or "filepath".
         """
 
         # Creating MQTT topic
