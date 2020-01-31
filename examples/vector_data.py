@@ -95,6 +95,7 @@ My_MDML_Exp.add_config('./examples_config.json', 'mdml_examples')
 
 # Send configuration file to the MDML
 My_MDML_Exp.send_config()
+time.sleep(1)
 
 # Gather data to send
 dat = {}

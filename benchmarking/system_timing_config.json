@@ -1,0 +1,83 @@
+{
+    "experiment": {
+        "experiment_id": "TEST",
+        "experiment_notes": "Publishing vector data example",
+        "experiment_devices": ["DEVICE_A"]
+    },
+    "devices": [
+        {
+            "device_id": "DEVICE_C",
+            "device_name": "Test device C",
+            "device_output": "random data",
+            "device_output_rate": 1,
+            "device_data_type": "text/numeric",
+            "device_notes": "Random data generated and streamed for example purposes",
+            "headers" : [
+                "variable1",
+                "variable2",
+                "variable3",
+                "variable4",
+                "variable5",
+                "variable6",
+                "variable7",
+                "variable8",
+                "variable9",
+                "variable10",
+                "variable11",
+                "variable12",
+                "variable13",
+                "variable14",
+                "variable15",
+                "variable16",
+                "variable17",
+                "variable18",
+                "variable19",
+                "variable20"
+            ],
+            "data_types" : [
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric",
+                "numeric"
+            ],
+            "data_units" : [
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA",
+                "NA"
+            ]
+        }
+    ]
+}

@@ -129,11 +129,12 @@ queries = [
     }
 ]
 # FuncX endpoint id and function id
-funcx_func_id = "d513405d-3bd4-49ad-922a-62107e98feb2" # sums variables 1 thru 5
+# funcx_func_id = "d1e7202b-510c-43e4-9247-5329ace8c784" # sums variables 1 thru 5
+funcx_func_id = "3796e6c7-7a39-4354-95a1-02c38063cc6c" # sums variables 1 thru 5
+funcx_func_id_broken = "f1bf1dcf-a37b-4346-81e6-4dbf6709dfe7" # sums variables 1 thru 5
 # funcx_func_id = "49624e16-067f-4a1a-9375-290a728eef50" # sums vars 1-5 with sleep
-funcx_endp_id = "9e4d0e7e-f957-4d7b-ae8a-dce8872dfa46" # 146.137.10.50 endpoint
+funcx_endp_id = "2895306b-569f-4ec9-815a-bcab73ea32f7" # 146.137.10.50 endpoint
 # funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
-# funcx_endp_id = "53703665-746d-4af5-8d3f-2e811b4f9bbe" # merf.egs.anl.gov endpoint
 
 # # The function below was registered with funcx to get the above func_id
 def sum_vars(data):
@@ -144,14 +145,14 @@ def sum_vars(data):
     return str(var_sum)
 #
 # # The input parameter from MDML looks like this:
-# { "DEVICE_A": [{
+# [{ "DEVICE_A": [{
 #   'time': '2019-12-20T18:23:09.883Z', 
 #   'variable1': 0.7148689571386346, 
 #   'variable2': 0.3303284415100972, 
 #   'variable3': 0.7029252964954437, 
 #   'variable4': 0.5739044292459075, 
 #   'variable5': 0.09692214917245678
-# }]}
+# }]}]
 #
 # # The return value is a string: '2.4817439194'
 
@@ -170,7 +171,7 @@ try:
             # run funcx analysis
             time.sleep(.2)
             # Send message to start analysis
-            My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id, funcx_endp_id)
+            My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id_broken, funcx_endp_id)
             
             # Sleep to send data once a second
             i += 1
