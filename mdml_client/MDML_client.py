@@ -157,7 +157,7 @@ def GET_images(image_metadata, experiment_id, host):
 
 def query(query, experiment_id, host, params={}):
     """
-    Query the MDML to . This is aimed at aiding in development of FuncX functions.
+    Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
     Parameters
     ----------
