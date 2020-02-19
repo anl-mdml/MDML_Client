@@ -173,7 +173,8 @@ def query(query, experiment_id, host, params={}):
     list
         Data structure that will be passed to FuncX
     """
-    resp = requests.get(f"http://{host}:1880/query?query={query}&parameters={params}&experiment_id={experiment_id}")
+    import json
+    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={experiment_id}")
     return json.loads(resp.text)
 
 class experiment:
