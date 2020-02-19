@@ -155,6 +155,26 @@ def GET_images(image_metadata, experiment_id, host):
         imgs.append(resp.content)
     return imgs
 
+def query(query, experiment_id, host, params={}):
+    """
+    Query the MDML to . This is aimed at aiding in development of FuncX functions.
+
+    Parameters
+    ----------
+    query : list
+        Description of the data to send funcx. See queries format in the documentation on GitHub
+    experiment_id : string
+        MDML experiment ID for which the data belongs
+    host : string
+        Host of the MDML instance
+    
+    Returns
+    -------
+    list
+        Data structure that will be passed to FuncX
+    """
+    resp = requests.get(f"http://{host}:1880/query?query={query}&parameters={params}&experiment_id={experiment_id}")
+    return json.loads(resp.text)
 
 class experiment:
     """
@@ -481,7 +501,7 @@ class experiment:
         }
         # Adding metadata if necessary
         if metadata != {}:
-            payload.metadata = metadata
+            payload['metadata'] = metadata
         # Check for valid filename
         if filename != '':
             if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
