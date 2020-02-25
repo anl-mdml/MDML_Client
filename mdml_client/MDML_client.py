@@ -122,10 +122,9 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         source = np.nan_to_num(source)
         min_val = np.min(source)
         max_val = np.max(source)
-        source = (source - min_val) * (255/max_val)
+        source = (source - min_val) * (255/(max_val - min_val))
     _, img = cv2.imencode('.jpg', source)
-    img_bytes = img.tobytes()
-    img_b64bytes = b64encode(img_bytes)
+    img_b64bytes = b64encode(img)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
@@ -514,7 +513,8 @@ class experiment:
         if timestamp == 0:
             timestamp = unix_time()
         payload['timestamp'] = timestamp
-        payload = json.dumps(payload)
+        # payload = json.dumps(payload)
+        payload = json.JSONEncoder().encode(payload)
         # Publish it
         self.client.publish(topic, payload)
 
