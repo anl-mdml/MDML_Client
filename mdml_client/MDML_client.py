@@ -513,8 +513,7 @@ class experiment:
         if timestamp == 0:
             timestamp = unix_time()
         payload['timestamp'] = timestamp
-        # payload = json.dumps(payload)
-        payload = json.JSONEncoder().encode(payload)
+        payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)
 
