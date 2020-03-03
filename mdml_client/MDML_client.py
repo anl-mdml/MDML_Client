@@ -260,68 +260,66 @@ class experiment:
             with open(config, 'r') as config_file:
                 config_str = config_file.read()
             try:
-                self.config = json.loads(config_str)
+                config = json.loads(config_str)
             except:
                 print("Error in json.loads() call on the config file contents.")
                 return
         elif type(config) == dict:
-            self.config = config
+            config = config
         else:
             print("Supplied configuration type is not supported. Must be of type str or type dict.")
 
-        config_keys = self.config.keys()
-
         # Validating top level section
-        if 'experiment' not in config_keys or 'devices' not in config_keys:
+        if 'experiment' not in config or 'devices' not in config:
             print("""Highest level of configuration json must be a dictionary 
             with the keys: 'experiment' and 'devices'""")
             return False
         
         # Validating experiment section
-        experiment_keys = self.config['experiment']
+        experiment_section = config['experiment']
             # 'experiment_number' not in experiment_keys or\
-        if 'experiment_id' not in experiment_keys or\
-            'experiment_notes' not in experiment_keys or\
-            'experiment_devices' not in experiment_keys:
+        if 'experiment_id' not in experiment_section or\
+            'experiment_notes' not in experiment_section or\
+            'experiment_devices' not in experiment_section:
             print("""Missing required fields in the 'experiment' section of your
             configuration""")
             return False
 
         # Validating devices section
-        devices = self.config['devices']
-        for device_keys in devices:
-            if 'device_id' not in device_keys or\
-                'device_name' not in device_keys or\
-                'device_output' not in device_keys or\
-                'device_output_rate' not in device_keys or\
-                'device_data_type' not in device_keys or\
-                'device_notes' not in device_keys or\
-                'headers' not in device_keys or\
-                'data_types' not in device_keys or\
-                'data_units' not in device_keys:
+        devices = config['devices']
+        for device in devices:
+            if 'device_id' not in device or\
+                'device_name' not in device or\
+                'device_output' not in device or\
+                'device_output_rate' not in device or\
+                'device_data_type' not in device or\
+                'device_notes' not in device or\
+                'headers' not in device or\
+                'data_types' not in device or\
+                'data_units' not in device:
                 print("""Missing required fields in the 'devices' section of your 
                 configuration""")
                 return False
 
         if self.tokens:
             try:
-                self.config['globus_token'] = self.tokens['funcx_service']['access_token']
+                config['globus_token'] = self.tokens['funcx_service']['access_token']
             except:
                 print("No Auth token found. Have you run .globus_login() to create one?\
                     This can be ignored if you are not using funcX for analysis.")
                 pass
 
         if experiment_run_id != "":
-            self.config['experiment']['experiment_run_id'] = experiment_run_id
-        # Check run id only contains letters and underscores
-        if re.match(r"^[\w]*$", self.config['experiment']['experiment_run_id']):
-            self.config = json.dumps(self.config)
-            print("Valid configuration found, now use .send_config() to send it to the MDML.")
-            # Return to string to prepare for sending to MDML
-            return True
-        else:
-            print("Experiment run ID contains characters other than letters, numbers, and underscores.")
-            return False
+            # Check run id only contains letters and underscores
+            if re.match(r"^[\w]*$", experiment_run_id):
+                config['experiment']['experiment_run_id'] = experiment_run_id
+                # Set config as string to prepare for sending to MDML
+                self.config = json.dumps(config)
+                print("Valid configuration found, now use .send_config() to send it to the MDML.")
+                return True
+            else:
+                print("Experiment run ID contains characters other than letters, numbers, and underscores.")
+                return False
 
     def send_config(self):
         """
