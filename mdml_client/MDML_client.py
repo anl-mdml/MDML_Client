@@ -320,6 +320,9 @@ class experiment:
             else:
                 print("Experiment run ID contains characters other than letters, numbers, and underscores.")
                 return False
+        else:
+            # Set config as string to prepare for sending to MDML
+            self.config = json.dumps(config)
 
     def send_config(self):
         """
