@@ -122,10 +122,9 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         source = np.nan_to_num(source)
         min_val = np.min(source)
         max_val = np.max(source)
-        source = (source - min_val) * (255/max_val)
+        source = (source - min_val) * (255/(max_val - min_val))
     _, img = cv2.imencode('.jpg', source)
-    img_bytes = img.tobytes()
-    img_b64bytes = b64encode(img_bytes)
+    img_b64bytes = b64encode(img)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
@@ -173,7 +172,8 @@ def query(query, experiment_id, host, params={}):
     list
         Data structure that will be passed to FuncX
     """
-    resp = requests.get(f"http://{host}:1880/query?query={query}&parameters={params}&experiment_id={experiment_id}")
+    import json
+    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={experiment_id}")
     return json.loads(resp.text)
 
 class experiment:
@@ -260,68 +260,69 @@ class experiment:
             with open(config, 'r') as config_file:
                 config_str = config_file.read()
             try:
-                self.config = json.loads(config_str)
+                config = json.loads(config_str)
             except:
                 print("Error in json.loads() call on the config file contents.")
                 return
         elif type(config) == dict:
-            self.config = config
+            config = config
         else:
             print("Supplied configuration type is not supported. Must be of type str or type dict.")
 
-        config_keys = self.config.keys()
-
         # Validating top level section
-        if 'experiment' not in config_keys or 'devices' not in config_keys:
+        if 'experiment' not in config or 'devices' not in config:
             print("""Highest level of configuration json must be a dictionary 
             with the keys: 'experiment' and 'devices'""")
             return False
         
         # Validating experiment section
-        experiment_keys = self.config['experiment']
+        experiment_section = config['experiment']
             # 'experiment_number' not in experiment_keys or\
-        if 'experiment_id' not in experiment_keys or\
-            'experiment_notes' not in experiment_keys or\
-            'experiment_devices' not in experiment_keys:
+        if 'experiment_id' not in experiment_section or\
+            'experiment_notes' not in experiment_section or\
+            'experiment_devices' not in experiment_section:
             print("""Missing required fields in the 'experiment' section of your
             configuration""")
             return False
 
         # Validating devices section
-        devices = self.config['devices']
-        for device_keys in devices:
-            if 'device_id' not in device_keys or\
-                'device_name' not in device_keys or\
-                'device_output' not in device_keys or\
-                'device_output_rate' not in device_keys or\
-                'device_data_type' not in device_keys or\
-                'device_notes' not in device_keys or\
-                'headers' not in device_keys or\
-                'data_types' not in device_keys or\
-                'data_units' not in device_keys:
+        devices = config['devices']
+        for device in devices:
+            if 'device_id' not in device or\
+                'device_name' not in device or\
+                'device_output' not in device or\
+                'device_output_rate' not in device or\
+                'device_data_type' not in device or\
+                'device_notes' not in device or\
+                'headers' not in device or\
+                'data_types' not in device or\
+                'data_units' not in device:
                 print("""Missing required fields in the 'devices' section of your 
                 configuration""")
                 return False
 
         if self.tokens:
             try:
-                self.config['globus_token'] = self.tokens['funcx_service']['access_token']
+                config['globus_token'] = self.tokens['funcx_service']['access_token']
             except:
                 print("No Auth token found. Have you run .globus_login() to create one?\
                     This can be ignored if you are not using funcX for analysis.")
                 pass
 
         if experiment_run_id != "":
-            self.config['experiment']['experiment_run_id'] = experiment_run_id
-        # Check run id only contains letters and underscores
-        if re.match(r"^[\w]*$", self.config['experiment']['experiment_run_id']):
-            self.config = json.dumps(self.config)
-            print("Valid configuration found, now use .send_config() to send it to the MDML.")
-            # Return to string to prepare for sending to MDML
-            return True
+            # Check run id only contains letters and underscores
+            if re.match(r"^[\w]*$", experiment_run_id):
+                config['experiment']['experiment_run_id'] = experiment_run_id
+                # Set config as string to prepare for sending to MDML
+                self.config = json.dumps(config)
+                print("Valid configuration found, now use .send_config() to send it to the MDML.")
+                return True
+            else:
+                print("Experiment run ID contains characters other than letters, numbers, and underscores.")
+                return False
         else:
-            print("Experiment run ID contains characters other than letters, numbers, and underscores.")
-            return False
+            # Set config as string to prepare for sending to MDML
+            self.config = json.dumps(config)
 
     def send_config(self):
         """
