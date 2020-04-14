@@ -13,17 +13,17 @@ print("*************************************************************************
 time.sleep(5)
 
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
-Exp_ID = 'TEST'
+Exp_ID = 'ESPIN'
 # MDML message broker host
-host = "merfpoc.egs.anl.gov"
+host = 'merf.egs.anl.gov'
 # MDML username and password
-username = 'test'
-password = 'testtest'
+username = 'espin'
+password = 'password'
 
 # Creating experiment configuration
 config = {
     "experiment": {
-        "experiment_id": "TEST",
+        "experiment_id": "ESPIN",
         "experiment_notes": "Example image streaming with the MDML",
         "experiment_devices": ["IMAGE"]
     },
@@ -36,7 +36,7 @@ config = {
             "device_data_type": "image",
             "device_notes": "Random Images",
             "headers": [
-                "PLIF"
+                "APS"
             ],
             "data_types": [
                 "Image"
@@ -70,7 +70,7 @@ My_MDML_Exp.start_debugger()
 time.sleep(1)
 
 # Add and validate a configuration for the experiment
-My_MDML_Exp.add_config('./examples_config.json', 'mdml_examples')
+My_MDML_Exp.add_config(config, 'aps_benchmark_test')
 # NOTE: The config variable created earlier is to illustrate the 
 # relevant configuration information for this example. The actual configuration
 # sent to the MDML contains devices for all examples so that different examples can 
@@ -87,16 +87,22 @@ time.sleep(2)
 
 reset = False
 
-import os
-
 try:
-    i = 0
+    i = 1
     while True:
-        while i < 100000000:
+        while i < 300:
             # Generating random images
-            img_byte_string = b64encode(np.random.bytes(3750000)).decode('utf-8')
-            My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10MB')
-            print(i)
+            random_image = np.random.randint(255, size=(400,500,3), dtype=np.uint8)    
+            _, img = cv2.imencode('.jpg', random_image)
+            img_bytes = img.tobytes()
+            img_b64bytes = b64encode(img_bytes)
+            img_byte_string = img_b64bytes.decode('utf-8')
+            
+            # Publish image
+            My_MDML_Exp.publish_image('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time())
+
+            # Sleep to publish data once a second
+            time.sleep(.1)
             i += 1
         if not reset:
             print("Ending MDML experiment")
@@ -106,5 +112,3 @@ except KeyboardInterrupt:
     if not reset:
         My_MDML_Exp.reset()
     My_MDML_Exp.stop_debugger()
-finally:
-    My_MDML_Exp.disconnect()

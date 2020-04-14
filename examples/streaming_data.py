@@ -131,12 +131,13 @@ try:
         while i < 20:
             # Create random data
             deviceA_data = '\t'.join(random_data(5))
-            
+            print(f'Device A: {deviceA_data}')
             # Send data
             My_MDML_Exp.publish_data('DEVICE_A', deviceA_data, '\t', influxDB=True)
             
             # Repeat for Device B
             deviceB_data = '\t'.join(random_data(3))
+            print(f'Device B: {deviceB_data}')
             My_MDML_Exp.publish_data('DEVICE_B', deviceB_data, '\t', influxDB=True)
 
             # Sleep to publish data once a second

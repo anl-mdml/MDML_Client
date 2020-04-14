@@ -7,7 +7,8 @@ from base64 import b64encode
 import mdml_client as mdml # pip install mdml_client #
 
 print("****************************************************************************")
-print("*** This example publish an image 10 times a second for 30 seconds.      ***")
+print("*** This benchmark sends messages of varying size (1KB to 10MB). 1000    ***")
+print("*** messasges per size.                                                  ***")
 print("*** Press Ctrl+C to stop the example.                                    ***")
 print("****************************************************************************")
 time.sleep(5)
@@ -15,7 +16,8 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-#host = 'merf.egs.anl.gov'
+host = 'merf.egs.anl.gov'
+host = '52.4.135.44'
 host = 'merfpoc.egs.anl.gov'
 # MDML username and password
 username = 'test'
@@ -107,13 +109,14 @@ print(len(b64encode(np.random.bytes(750000)).decode('utf-8'))) # 1MB
 print(len(b64encode(np.random.bytes(1500000)).decode('utf-8'))) # 2MB
 print(len(b64encode(np.random.bytes(3750000)).decode('utf-8'))) # 5MB
 print(len(b64encode(np.random.bytes(7500000)).decode('utf-8'))) # 10MB
+print(len(b64encode(np.random.bytes(15000000)).decode('utf-8'))) # 10MB
 
 
 
 try:
     i = 0
     while True:
-        while i < 13000:
+        while i < 14000:
             if i < 1000:
                 # Generating random images
                 img_byte_string = b64encode(np.random.bytes(750)).decode('utf-8')
@@ -191,6 +194,12 @@ try:
                 img_byte_string = b64encode(np.random.bytes(7500000)).decode('utf-8')
                 My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '10MB')
                 time.sleep(1.5)
+
+            elif i < 14000:
+                # Generating random images
+                img_byte_string = b64encode(np.random.bytes(15000000)).decode('utf-8')
+                My_MDML_Exp._publish_image_benchmarks('IMAGE', img_byte_string, 'random_image_' + str(i) + '.JPG', mdml.unix_time(), '2MB')
+                time.sleep(1)
 
             i += 1
         if not reset:
