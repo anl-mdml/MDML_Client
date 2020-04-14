@@ -501,8 +501,7 @@ class experiment:
             'data_type': 'image'
         }
         # Adding metadata if necessary
-        if metadata != {}:
-            payload['metadata'] = metadata
+        payload['metadata'] = metadata
         # Check for valid filename
         if filename != '':
             if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
