@@ -550,7 +550,7 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
 
-    def query(query, host, params={}):
+    def query(self, query, host):
         """
         Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -569,7 +569,7 @@ class experiment:
             Data structure that will be passed to FuncX
         """
         import json
-        resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={self.experiment_id}")
+        resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
         return json.loads(resp.text)
 
     def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
