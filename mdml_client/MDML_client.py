@@ -178,11 +178,10 @@ def query_to_pandas(device, query_result, sort=True):
     except KeyError:
         print("Device does not exist in this query result.")
     
-    tmp = {i:[] for i in device_data[0] if i != 'time'}
+    tmp = {i:[] for i in device_data[0]}
     for row in device_data:
         for d in row:
-            if d != 'time':
-                tmp[d].append(row[d])
+            tmp[d].append(row[d])
     device_data_pd = pd.DataFrame.from_dict(tmp)
     if sort:
         device_data_pd = device_data_pd.sort_index(axis=1)
