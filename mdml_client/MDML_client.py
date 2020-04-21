@@ -1,6 +1,7 @@
 import cv2
 import json
 import numpy as np
+import pandas as pd
 import os
 import paho.mqtt.client as mqtt
 import paho.mqtt.subscribe as subscribe
@@ -153,6 +154,39 @@ def GET_images(image_metadata, experiment_id, host):
         resp = requests.get(f"http://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}")
         imgs.append(resp.content)
     return imgs
+
+def query_to_pandas(device, query_result, sort=True):
+    """
+    Pull out a device's queried data as a pandas DataFrame from the results of experiment.query().
+    
+    Parameters
+    ----------
+    device : string
+        String of the device id that you want to pull out as a pandas DataFrame
+    query_result : list
+        Result of a experiment.query() call.
+
+    Returns
+    -------
+    DataFrame
+        Pandas DataFrame of the query performed
+    """
+    try:
+        device_data = query_result[device]
+        if len(device_data) == 0:
+            raise Exception("No data found in the given device.")
+    except KeyError:
+        print("Device does not exist in this query result.")
+    
+    tmp = {i:[] for i in device_data[0] if i != 'time'}
+    for row in device_data:
+        for d in row:
+            if d != 'time':
+                tmp[d].append(row[d])
+    device_data_pd = pd.DataFrame.from_dict(tmp)
+    if sort:
+        device_data_pd = device_data_pd.sort_index(axis=1)
+    return device_data_pd
 
 def query(query, experiment_id, host, params={}):
     """
@@ -516,6 +550,28 @@ class experiment:
         payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)
+
+    def query(query, host, params={}):
+        """
+        Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
+
+        Parameters
+        ----------
+        query : list
+            Description of the data to send funcx. See queries format in the documentation on GitHub
+        experiment_id : string
+            MDML experiment ID for which the data belongs
+        host : string
+            Host of the MDML instance
+        
+        Returns
+        -------
+        list
+            Data structure that will be passed to FuncX
+        """
+        import json
+        resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={self.experiment_id}")
+        return json.loads(resp.text)
 
     def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
         """
