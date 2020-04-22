@@ -457,7 +457,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, device_id, queries, function_id, endpoint_id, parameters={}):
+    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}):
         """
         Publish a message to run an analysis
 
@@ -466,8 +466,6 @@ class experiment:
         ----------
         device_id : string
             Device ID for storing analysis results (must match configuration file)
-        queries : list
-            Description of the data to send funcx. See queries format in the documentation on GitHub
         function_id : string
             From FuncX, the id of the function to run
         endpoint_id : string
@@ -480,7 +478,6 @@ class experiment:
 
         # Set message payload
         payload = {
-            'queries': queries,
             'function_id': function_id,
             'endpoint_id': endpoint_id,
             'timestamp': unix_time(),
@@ -497,6 +494,45 @@ class experiment:
 
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
+
+    def use_dlhub(self, data, device_id, function_id, parameters={}):
+        """
+        Publish a message to run an analysis
+
+
+        Parameters
+        ----------
+        data : object
+            Input data for the model being used.
+        device_id : string
+            Device ID for storing analysis results (must match configuration file)
+        function_id : string
+            From FuncX, the id of the function to run
+        parameters : any json serializable type
+            Custom parameters to be accessed in the second element of your FuncX data parameter
+        """
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
+
+        # Set message payload
+        payload = {
+            'function_id': function_id,
+            'endpoint_id': '86a47061-f3d9-44f0-90dc-56ddc642c000',
+            'timestamp': unix_time(),
+            'parameters': {"data": data}
+        }
+
+        # Add auth if set
+        if self.tokens:
+            payload['globus_token'] = self.tokens['funcx_service']['access_token']
+        else:
+            print("No globus token found. You must use the .globus_login() method first.\
+                    This can be ignored if you are not using funcX for analysis.")
+            return
+
+        # Send data via MQTT
+        self.client.publish(topic, json.dumps(payload))
+
         
     def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
         """
