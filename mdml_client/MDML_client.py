@@ -495,7 +495,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def use_dlhub(self, data, device_id, function_id, parameters={}):
+    def use_dlhub(self, data, device_id, function_id, funcx_callback=None):
         """
         Publish a message to run an analysis
 
@@ -508,11 +508,9 @@ class experiment:
             Device ID for storing analysis results (must match configuration file)
         function_id : string
             From FuncX, the id of the function to run
-        parameters : any json serializable type
-            Custom parameters to be accessed in the second element of your FuncX data parameter
         """
         # Creating MQTT topic
-        topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
+        topic = "MDML/" + self.experiment_id + "/DLHUB/" + device_id
 
         # Set message payload
         payload = {
@@ -521,6 +519,15 @@ class experiment:
             'timestamp': unix_time(),
             'parameters': {"data": data}
         }
+
+        # Add FuncX callback function
+        if funcx_callback is not None:
+            # Test format of the inputs
+            assert "endpoint_uuid" in funcx_callback.keys()
+            assert "function_uuid" in funcx_callback.keys()
+            assert "save_intermediate" in funcx_callback.keys()
+            # Add to payload
+            payload['funcx_callback'] = funcx_callback
 
         # Add auth if set
         if self.tokens:

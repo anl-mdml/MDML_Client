@@ -2,7 +2,7 @@
     "experiment": {
         "experiment_id": "TEST",
         "experiment_notes": "Publishing vector data example",
-        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "IMAGE_ANALYSIS", "ANALYSIS", "ADD1"]
+        "experiment_devices": ["DEVICE_A", "DEVICE_B", "DEVICE_F", "CLIENT_A", "CLIENT_B", "VECTOR", "IMAGE", "IMAGE_ANALYSIS", "ANALYSIS", "ADD1", "MNIST_IMAGES", "MNIST_DLHUB"]
     },
     "devices": [
         {
@@ -207,6 +207,42 @@
             "device_output_rate": 0.01,
             "device_data_type": "text/numeric",
             "device_notes": "Add 1 to something",
+            "store_results": true,
+            "estimated_runtime_ms": 100,
+            "headers": [
+                "sum"
+            ],
+            "data_types": [
+                "sum"
+            ],
+            "data_units": [
+                "sum"
+            ]
+        },
+        {
+            "device_id": "MNIST_IMAGES",
+            "device_name": "MNIST images",
+            "device_output": "MNIST image",
+            "device_output_rate": 0.01,
+            "device_data_type": "image",
+            "device_notes": "Images straight from the MNIST dataset",
+            "headers": [
+                "image"
+            ],
+            "data_types": [
+                "image"
+            ],
+            "data_units": [
+                "image"
+            ]
+        },
+        {
+            "device_id": "MNIST_DLHUB",
+            "device_name": "MNIST data analysis",
+            "device_output": "1 hot encoded vector of the most likely number",
+            "device_output_rate": 0.01,
+            "device_data_type": "text/numeric",
+            "device_notes": "Performed with DLHub",
             "store_results": true,
             "estimated_runtime_ms": 100,
             "headers": [
