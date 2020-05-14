@@ -246,13 +246,13 @@
             "store_results": true,
             "estimated_runtime_ms": 100,
             "headers": [
-                "sum"
+                "predicted_number"
             ],
             "data_types": [
-                "sum"
+                "integer"
             ],
             "data_units": [
-                "sum"
+                "integer"
             ]
         }
     ]

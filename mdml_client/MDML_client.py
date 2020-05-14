@@ -187,7 +187,7 @@ def query_to_pandas(device, query_result, sort=True):
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
 
-def query(query, experiment_id, host, params={}):
+def query(query, experiment_id, host):
     """
     Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -206,7 +206,7 @@ def query(query, experiment_id, host, params={}):
         Data structure that will be passed to FuncX
     """
     import json
-    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={experiment_id}")
+    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&experiment_id={experiment_id}")
     return json.loads(resp.text)
 
 class experiment:
@@ -593,7 +593,7 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
 
-    def query(self, query, host):
+    def query(self, query):
         """
         Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -612,7 +612,7 @@ class experiment:
             Data structure that will be passed to FuncX
         """
         import json
-        resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
+        resp = requests.get(f"http://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
         return json.loads(resp.text)
 
     def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
@@ -663,13 +663,22 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
                 
-    def reset(self):
+    def reset(self, hard_reset=False):
         """
         Publish a reset message on the MDML message broker to reset
         your current experiment.
+
+        Parameters
+        ----------
+        hard_reset : bool
+            True if the experiment should be ended regardless of analysis 
+            progress.            
         """
         topic = "MDML/" + self.experiment_id + "/RESET"
-        self.client.publish(topic, '{"reset": 1}')
+        if hard_reset:
+            self.client.publish(topic, '{"reset": 1, "hard_reset": 1}')
+        else:
+            self.client.publish(topic, '{"reset": 1}')
     
     def start_debugger(self):
         """

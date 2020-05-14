@@ -23,27 +23,33 @@ from keras.datasets import mnist
 x_test = x_test.copy().reshape(10000,28,28,1)
 
 
-img_ind = randrange(10000)
-_, img = cv2.imencode('.jpg', x_test[img_ind])
-img_b64bytes = b64encode(img)
-img_byte_string = img_b64bytes.decode('utf-8')
 
-exp.publish_image("MNIST_IMAGES", img_byte_string)
+try:
+    while True:
+        img_ind = randrange(10000)
+        _, img = cv2.imencode('.jpg', x_test[img_ind])
+        img_b64bytes = b64encode(img)
+        img_byte_string = img_b64bytes.decode('utf-8')
 
-# Need the FuncX uuid of the model
-func_uuid = '8a453f62-978d-432e-8525-31faaa124897'
-# Starting debugger
-exp.start_debugger()
+        exp.publish_image("MNIST_IMAGES", img_byte_string)
 
-dat = x_test[img_ind:img_ind+1].tolist()
-funcx_callback = {
-    "endpoint_uuid": "",
-    "function_uuid": "",
-    "save_intermediate": False
-}
-exp.use_dlhub(dat, "MNIST_DLHUB", "8a453f62-978d-432e-8525-31faaa124897", funcx_callback)
+        func_uuid_dlhub = '8a453f62-978d-432e-8525-31faaa124897' #uuid of DLHub model
+        func_uuid_cleanup = '8be32fc0-0fbc-487c-b41f-cbb34f4e2715' #formats DLHub model output
 
-time.sleep(5)
-exp.disconnect()
+        # Starting debugger
+        exp.start_debugger()
+
+        dat = x_test[img_ind:img_ind+1].tolist()
+        funcx_callback = {
+            "endpoint_uuid": "a62a830a-5cd1-42a8-a4a8-a44fa552c899",
+            "function_uuid": func_uuid_cleanup,
+            "save_intermediate": False
+        }
+        exp.use_dlhub(dat, "MNIST_DLHUB", func_uuid_dlhub, funcx_callback)
+
+        time.sleep(5)
+except KeyboardInterrupt:
+    exp.reset(hard_reset=True)
+    exp.disconnect()
 
 

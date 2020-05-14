@@ -12,7 +12,7 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = 'merf.egs.anl.gov'
+host = 'merfpoc.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -120,48 +120,17 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
-# Init vars for funcx analysis
-queries = [
-    {
-        "device": "DEVICE_A",
-        "variables": [],
-        "last" : 1
-    }
-]
 # FuncX endpoint id and function id
-# funcx_func_id = "d1e7202b-510c-43e4-9247-5329ace8c784" # sums variables 1 thru 5
-funcx_func_id = "3796e6c7-7a39-4354-95a1-02c38063cc6c" # sums variables 1 thru 5
-funcx_func_id_broken = "f1bf1dcf-a37b-4346-81e6-4dbf6709dfe7" # sums variables 1 thru 5
-# funcx_func_id = "49624e16-067f-4a1a-9375-290a728eef50" # sums vars 1-5 with sleep
-funcx_endp_id = "2895306b-569f-4ec9-815a-bcab73ea32f7" # 146.137.10.50 endpoint
-# funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
+func_id = "5481e03d-a8dc-4289-8574-9e5735062165" # sums variables 1 thru 5
+endp_id = "a62a830a-5cd1-42a8-a4a8-a44fa552c899" # merf.egs.anl.gov endpoint
 
-# # The function below was registered with funcx to get the above func_id
-def sum_vars(data):
-    import time
-    time.sleep(5)
-    row = data['DEVICE_A'][0]
-    var_sum = float(row['variable1']) + float(row['variable2']) + float(row['variable3']) + float(row['variable4']) + float(row['variable5'])
-    return str(var_sum)
-#
-# # The input parameter from MDML looks like this:
-# [{ "DEVICE_A": [{
-#   'time': '2019-12-20T18:23:09.883Z', 
-#   'variable1': 0.7148689571386346, 
-#   'variable2': 0.3303284415100972, 
-#   'variable3': 0.7029252964954437, 
-#   'variable4': 0.5739044292459075, 
-#   'variable5': 0.09692214917245678
-# }]}]
-#
-# # The return value is a string: '2.4817439194'
 
 reset = False
 try:
     i = 1
     while True:
         # Send 5 datapoints and then an analyses
-        while i < 6:
+        while i < 600:
             # Create random data
             deviceA_data = '\t'.join(random_data(5))
             
@@ -171,11 +140,15 @@ try:
             # run funcx analysis
             time.sleep(.2)
             # Send message to start analysis
-            My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id_broken, funcx_endp_id)
+            params = {
+                "experiment_id": "TEST",
+                "host": "merfpoc.egs.anl.gov"
+            }
+            My_MDML_Exp.publish_analysis("ANALYSIS", func_id, endp_id, params)
             
             # Sleep to send data once a second
             i += 1
-            time.sleep(.7)
+            time.sleep(0.7)
         if not reset:
             time.sleep(10)
             print("Ending MDML experiment")
