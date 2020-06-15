@@ -11,6 +11,7 @@ import sys
 import tarfile
 import threading
 import time
+import boto3
 import requests
 import multiprocessing
 from base64 import b64encode
@@ -116,7 +117,7 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         String of bytes that can be used as the second argument in 
         experiment.publish_image()
     """
-    source = cv2.imread(file_name, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+    source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
     if resize_x != 0 and resize_y != 0:
         source = cv2.resize(source, (resize_x, resize_y))
     if rescale_pixel_intensity:
@@ -223,10 +224,14 @@ class experiment:
         Password for the supplied MDML username
     host : str
         MDML host,  this will be given to you by an MDML admin
+    s3_access_key : str
+        S3 access key provided by an MDML admin
+    s3_secret_key : str
+        S3 secret key provided by an MDML admin
     
     """
 
-    def __init__(self, experiment_id, username, passwd, host):
+    def __init__(self, experiment_id, username, passwd, host, s3_access_key=None, s3_secret_key=None):
         
         self.experiment_id = experiment_id.upper()
         self.username = username
@@ -237,7 +242,6 @@ class experiment:
         self.msg_queue = None
         self.debugger = None
         self.debug_callback = None
-        
 
         # Creating connection to MQTT broker
         client = mqtt.Client()
@@ -256,6 +260,42 @@ class experiment:
             print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
             print("ERROR! Could not connect to the MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
+
+        if s3_access_key is not None:
+            # Creating boto3 (s3) client connection
+            session = boto3.session.Session()
+            try:
+                self.s3_client = session.client(
+                    service_name='s3',
+                    aws_access_key_id=s3_access_key,
+                    aws_secret_access_key=s3_secret_key,
+                    endpoint_url='https://s3.it.anl.gov:18082'
+                )
+            except:
+                print("ERROR! Connection to s3 failed.")
+
+    def s3_login(self, s3_access_key, s3_secret_key):
+        """
+        Create connection to BIS S3 object store for use in image streaming
+
+        Parameters
+        ==========
+        s3_access_key : str
+            S3 access key provided by an MDML admin
+        s3_secret_key : str
+            S3 secret key provided by an MDML admin
+        """
+        # Creating boto3 (s3) client connection
+        session = boto3.session.Session()
+        try:
+            self.s3_client = session.client(
+                service_name='s3',
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key,
+                endpoint_url='https://s3.it.anl.gov:18082'
+            )
+        except:
+            print("ERROR! Connection to s3 failed.")
 
     def globus_login(self):
         """
@@ -488,8 +528,7 @@ class experiment:
         if self.tokens:
             payload['globus_token'] = self.tokens['funcx_service']['access_token']
         else:
-            print("No globus token found. You must use the .globus_login() method first.\
-                    This can be ignored if you are not using funcX for analysis.")
+            print("No globus token found. You must use the .globus_login() before starting an analysis.")
             return
 
         # Send data via MQTT
@@ -540,6 +579,56 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
+    def publish_image_s3(self, device_id, img_filename, obj_name, timestamp = 0, metadata = {}):
+        """
+        Publish an image to MDML
+
+        Parameters
+        ----------
+        device_id : str
+            Unique string identifying the device that created the data.
+            This must correspond with the experiment's configuration
+        img_filename : str
+            filename where the image is stored
+        obj_name : str
+            A unique object name that will be used in the object store
+        timestamp : int
+            Unix time in nanoseconds. Can be supplied by the unix_time()
+            function in this package
+        metadata : dict
+            Dictionary containing any metadata for the image. Data types of 
+            the dictionary values must not be changed. Keys cannot include
+            "time" or "filepath".
+        """
+
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Base payload
+        payload = {
+            'filename': img_filename,
+            'obj_name': obj_name,
+            'data_type': 'image',
+            'send_method': 's3'
+        }
+        # Adding metadata if necessary
+        payload['metadata'] = metadata
+        # # Check for valid filename
+        # if img_filename != '':
+        #     if re.match(r"^[\w/-]+\.[A-Za-z0-9]+$", img_filename) == None:
+        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
+        #         return
+        #     else:
+        #         payload['filename'] = img_filename
+
+        # Adding timestamp
+        if timestamp == 0:
+            timestamp = unix_time()
+        payload['timestamp'] = timestamp
+        payload = json.dumps(payload)
+        # Upload to s3
+        self.s3_client.upload_file(img_filename, f'mdml-{self.experiment_id.lower()}', obj_name)
+        # Publish it
+        self.client.publish(topic, payload)
         
     def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
         """
@@ -578,13 +667,13 @@ class experiment:
         }
         # Adding metadata if necessary
         payload['metadata'] = metadata
-        # Check for valid filename
-        if filename != '':
-            if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
-                print("Filename not valid. Can only contains letters, numbers, and underscores.")
-                return
-            else:
-                payload['filename'] = filename
+        # # Check for valid filename
+        # if filename != '':
+        #     if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
+        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
+        #         return
+        #     else:
+        #         payload['filename'] = filename
         # Adding timing code
         if timestamp == 0:
             timestamp = unix_time()

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = "mdml_client",
-    version = "1.1.21",
+    version = "1.1.33",
     author = "Jakob Elias",
     author_email = "jelias@anl.gov",
     description = "Client to connect to the MDML",
@@ -13,6 +13,13 @@ setuptools.setup(
     long_description_content_type = "text/markdown",
     url = "https://github.com/jelias1/MDML_Client",
     packages = setuptools.find_packages(),
+    install_requires=[
+        "opencv-python",
+        "pandas",
+        "funcx",
+        "paho-mqtt",
+        "boto3"
+    ],
     classifiers = [
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
