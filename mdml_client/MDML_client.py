@@ -441,7 +441,7 @@ class experiment:
             True if the data should be stored in InfluxDB, False otherwise (default is True)
         """
         if type(data) != dict:
-            print("Parameter data is not a dictionary.")
+            print("Data parameter is not a dictionary.")
             return
 
         # Creating MQTT topic
@@ -497,7 +497,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}):
+    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}, funcx_callback=None):
         """
         Publish a message to run an analysis
 
@@ -512,6 +512,8 @@ class experiment:
             From FuncX, the id of the endpoint to run the function on
         parameters : any json serializable type
             Custom parameters to be accessed in the second element of your FuncX data parameter
+        funcx_callback : dict
+            Dictionary with another set of FuncX params to run with data output from the first FuncX call
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
@@ -523,6 +525,15 @@ class experiment:
             'timestamp': unix_time(),
             'parameters': parameters
         }
+
+        # Add FuncX callback function
+        if funcx_callback is not None:
+            # Test format of the inputs
+            assert "endpoint_uuid" in funcx_callback.keys()
+            assert "function_uuid" in funcx_callback.keys()
+            assert "save_intermediate" in funcx_callback.keys()
+            # Add to payload
+            payload['funcx_callback'] = funcx_callback
 
         # Add auth if set
         if self.tokens:
@@ -546,7 +557,9 @@ class experiment:
         device_id : string
             Device ID for storing analysis results (must match configuration file)
         function_id : string
-            From FuncX, the id of the function to run
+            From FuncX, the id of the function to run,
+        funcx_callback : dict
+            Dictionary with another set of FuncX params to run with data output from the first FuncX call
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DLHUB/" + device_id
@@ -690,15 +703,11 @@ class experiment:
         ----------
         query : list
             Description of the data to send funcx. See queries format in the documentation on GitHub
-        experiment_id : string
-            MDML experiment ID for which the data belongs
-        host : string
-            Host of the MDML instance
         
         Returns
         -------
         list
-            Data structure that will be passed to FuncX
+            Experiment data from MDML's InfluxDB
         """
         import json
         resp = requests.get(f"http://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
@@ -823,7 +832,22 @@ class experiment:
             self.debugger.terminate()
         print("Debugger stopped.")
 
-    def replay_experiment(self, filename):
+    def replay_experiment_run(self, experiment_run_id):
+        """
+        Tell MDML to replay a past experiment.
+
+        Parameters
+        ----------
+        experiment_run_id : str
+            Experiment run ID supplied by the user - this is different than 
+            an experiment ID. This could be an integer if no run ID was 
+            supplied by the user for the original experiment.
+        """
+        topic = "MDML/" + self.experiment_id + "/REPLAY/" + experiment_run_id
+        self.client.publish(topic, '{"replay": 1}')
+
+
+    def replay_experiment(self, filename, speedup=1):
         """
         Replay an old experiment by specifying a tar file output from MDML
         
@@ -832,6 +856,8 @@ class experiment:
         ----------
         filename : str
             absolute filepath of the tar file for the experiment you would like to replay.
+        speedup : int
+            speedup of data rates
         """
         # Validate file
         try:
@@ -875,7 +901,7 @@ class experiment:
         exp_start_time = int(min(first_timestamps))
         exp_end_time = int(max(last_timestamps))
         exp_duration = (exp_end_time - exp_start_time)/60000000000 # nansecs to mins 60,000,000,000
-        print("Experiment replay will take " + str(exp_duration) + " minutes.")
+        print("Experiment replay will take " + str(float(exp_duration/speedup)) + " minutes.")
         sim_start_time = unix_time(ret_int=True)
         
         try:
@@ -885,16 +911,18 @@ class experiment:
                                                         exp_dir, \
                                                         device_data_types[i], \
                                                         exp_start_time, \
-                                                        sim_start_time,))
+                                                        sim_start_time, \
+                                                        speedup))
                 tmp.setDaemon(True)
                 tmp.start()
             time.sleep(4)
         except KeyboardInterrupt:
             print("Ending experiment with MDML.")
             self.reset()
+            self.disconnect()
             return
 
-    def _replay_file(self, device_id, file_dir, data_type, exp_start_time, sim_start_time):
+    def _replay_file(self, device_id, file_dir, data_type, exp_start_time, sim_start_time, speedup):
         with open(file_dir + '/' + device_id) as data_file:
             _ = data_file.readline()
             data = data_file.readlines()
@@ -902,20 +930,21 @@ class experiment:
         while True:
             # Get next timestamp TODO delimiter needs to come from experiment configuration file
             next_dat_time = int(re.split('\t', data[0])[0])
-            exp_delta = next_dat_time - exp_start_time
+            exp_delta = float(next_dat_time - exp_start_time)/speedup
             sim_delta = unix_time(ret_int=True) - sim_start_time
 
             if (sim_delta >= exp_delta):
                 if data_type == "text/numeric":
-                    new_time = str(sim_start_time + exp_delta)
-                    next_row = data[0].split('\t')
-                    next_row[0] = new_time
-                    next_row = '\t'.join(next_row)
-                    self.publish_data(device_id, next_row, data_delimiter='\t', influxDB=True)
+                    # new_time = str(sim_start_time + exp_delta)
+                    # next_row = data[0].split('\t')
+                    # next_row[0] = new_time
+                    # next_row = '\t'.join(next_row)
+                    # self.publish_data(device_id, next_row, data_delimiter='\t', influxDB=True)
+                    self.publish_data(device_id, data[0], data_delimiter='\t', influxDB=True)
                 elif data_type == "image":
                     img_filename = file_dir + '/' + re.split('\t', data[0])[1]
                     img_byte_string = read_image(img_filename)
-                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + exp_delta)
+                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + sim_delta)
                 else:
                     print("DATA_TYPE IN CONFIGURATION NOT SUPPORTED")
                 del data[0]
