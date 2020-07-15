@@ -11,6 +11,7 @@ import sys
 import tarfile
 import threading
 import time
+import boto3
 import requests
 import multiprocessing
 from base64 import b64encode
@@ -116,7 +117,7 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         String of bytes that can be used as the second argument in 
         experiment.publish_image()
     """
-    source = cv2.imread(file_name, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+    source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
     if resize_x != 0 and resize_y != 0:
         source = cv2.resize(source, (resize_x, resize_y))
     if rescale_pixel_intensity:
@@ -187,7 +188,7 @@ def query_to_pandas(device, query_result, sort=True):
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
 
-def query(query, experiment_id, host, params={}):
+def query(query, experiment_id, host):
     """
     Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -206,7 +207,7 @@ def query(query, experiment_id, host, params={}):
         Data structure that will be passed to FuncX
     """
     import json
-    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={experiment_id}")
+    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&experiment_id={experiment_id}")
     return json.loads(resp.text)
 
 class experiment:
@@ -223,10 +224,14 @@ class experiment:
         Password for the supplied MDML username
     host : str
         MDML host,  this will be given to you by an MDML admin
+    s3_access_key : str
+        S3 access key provided by an MDML admin
+    s3_secret_key : str
+        S3 secret key provided by an MDML admin
     
     """
 
-    def __init__(self, experiment_id, username, passwd, host):
+    def __init__(self, experiment_id, username, passwd, host, s3_access_key=None, s3_secret_key=None):
         
         self.experiment_id = experiment_id.upper()
         self.username = username
@@ -237,7 +242,6 @@ class experiment:
         self.msg_queue = None
         self.debugger = None
         self.debug_callback = None
-        
 
         # Creating connection to MQTT broker
         client = mqtt.Client()
@@ -256,6 +260,42 @@ class experiment:
             print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
             print("ERROR! Could not connect to the MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
+
+        if s3_access_key is not None:
+            # Creating boto3 (s3) client connection
+            session = boto3.session.Session()
+            try:
+                self.s3_client = session.client(
+                    service_name='s3',
+                    aws_access_key_id=s3_access_key,
+                    aws_secret_access_key=s3_secret_key,
+                    endpoint_url='https://s3.it.anl.gov:18082'
+                )
+            except:
+                print("ERROR! Connection to s3 failed.")
+
+    def s3_login(self, s3_access_key, s3_secret_key):
+        """
+        Create connection to BIS S3 object store for use in image streaming
+
+        Parameters
+        ==========
+        s3_access_key : str
+            S3 access key provided by an MDML admin
+        s3_secret_key : str
+            S3 secret key provided by an MDML admin
+        """
+        # Creating boto3 (s3) client connection
+        session = boto3.session.Session()
+        try:
+            self.s3_client = session.client(
+                service_name='s3',
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key,
+                endpoint_url='https://s3.it.anl.gov:18082'
+            )
+        except:
+            print("ERROR! Connection to s3 failed.")
 
     def globus_login(self):
         """
@@ -401,7 +441,7 @@ class experiment:
             True if the data should be stored in InfluxDB, False otherwise (default is True)
         """
         if type(data) != dict:
-            print("Parameter data is not a dictionary.")
+            print("Data parameter is not a dictionary.")
             return
 
         # Creating MQTT topic
@@ -457,7 +497,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, device_id, queries, function_id, endpoint_id, parameters={}):
+    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}, funcx_callback=None):
         """
         Publish a message to run an analysis
 
@@ -466,26 +506,80 @@ class experiment:
         ----------
         device_id : string
             Device ID for storing analysis results (must match configuration file)
-        queries : list
-            Description of the data to send funcx. See queries format in the documentation on GitHub
         function_id : string
             From FuncX, the id of the function to run
         endpoint_id : string
             From FuncX, the id of the endpoint to run the function on
         parameters : any json serializable type
             Custom parameters to be accessed in the second element of your FuncX data parameter
+        funcx_callback : dict
+            Dictionary with another set of FuncX params to run with data output from the first FuncX call
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
 
         # Set message payload
         payload = {
-            'queries': queries,
             'function_id': function_id,
             'endpoint_id': endpoint_id,
             'timestamp': unix_time(),
             'parameters': parameters
         }
+
+        # Add FuncX callback function
+        if funcx_callback is not None:
+            # Test format of the inputs
+            assert "endpoint_uuid" in funcx_callback.keys()
+            assert "function_uuid" in funcx_callback.keys()
+            assert "save_intermediate" in funcx_callback.keys()
+            # Add to payload
+            payload['funcx_callback'] = funcx_callback
+
+        # Add auth if set
+        if self.tokens:
+            payload['globus_token'] = self.tokens['funcx_service']['access_token']
+        else:
+            print("No globus token found. You must use the .globus_login() before starting an analysis.")
+            return
+
+        # Send data via MQTT
+        self.client.publish(topic, json.dumps(payload))
+
+    def use_dlhub(self, data, device_id, function_id, funcx_callback=None):
+        """
+        Publish a message to run an analysis
+
+
+        Parameters
+        ----------
+        data : object
+            Input data for the model being used.
+        device_id : string
+            Device ID for storing analysis results (must match configuration file)
+        function_id : string
+            From FuncX, the id of the function to run,
+        funcx_callback : dict
+            Dictionary with another set of FuncX params to run with data output from the first FuncX call
+        """
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DLHUB/" + device_id
+
+        # Set message payload
+        payload = {
+            'function_id': function_id,
+            'endpoint_id': '86a47061-f3d9-44f0-90dc-56ddc642c000',
+            'timestamp': unix_time(),
+            'parameters': {"data": data}
+        }
+
+        # Add FuncX callback function
+        if funcx_callback is not None:
+            # Test format of the inputs
+            assert "endpoint_uuid" in funcx_callback.keys()
+            assert "function_uuid" in funcx_callback.keys()
+            assert "save_intermediate" in funcx_callback.keys()
+            # Add to payload
+            payload['funcx_callback'] = funcx_callback
 
         # Add auth if set
         if self.tokens:
@@ -497,6 +591,57 @@ class experiment:
 
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
+
+    def publish_image_s3(self, device_id, img_filename, obj_name, timestamp = 0, metadata = {}):
+        """
+        Publish an image to MDML
+
+        Parameters
+        ----------
+        device_id : str
+            Unique string identifying the device that created the data.
+            This must correspond with the experiment's configuration
+        img_filename : str
+            filename where the image is stored
+        obj_name : str
+            A unique object name that will be used in the object store
+        timestamp : int
+            Unix time in nanoseconds. Can be supplied by the unix_time()
+            function in this package
+        metadata : dict
+            Dictionary containing any metadata for the image. Data types of 
+            the dictionary values must not be changed. Keys cannot include
+            "time" or "filepath".
+        """
+
+        # Creating MQTT topic
+        topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
+        # Base payload
+        payload = {
+            'filename': img_filename,
+            'obj_name': obj_name,
+            'data_type': 'image',
+            'send_method': 's3'
+        }
+        # Adding metadata if necessary
+        payload['metadata'] = metadata
+        # # Check for valid filename
+        # if img_filename != '':
+        #     if re.match(r"^[\w/-]+\.[A-Za-z0-9]+$", img_filename) == None:
+        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
+        #         return
+        #     else:
+        #         payload['filename'] = img_filename
+
+        # Adding timestamp
+        if timestamp == 0:
+            timestamp = unix_time()
+        payload['timestamp'] = timestamp
+        payload = json.dumps(payload)
+        # Upload to s3
+        self.s3_client.upload_file(img_filename, f'mdml-{self.experiment_id.lower()}', obj_name)
+        # Publish it
+        self.client.publish(topic, payload)
         
     def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
         """
@@ -535,13 +680,13 @@ class experiment:
         }
         # Adding metadata if necessary
         payload['metadata'] = metadata
-        # Check for valid filename
-        if filename != '':
-            if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
-                print("Filename not valid. Can only contains letters, numbers, and underscores.")
-                return
-            else:
-                payload['filename'] = filename
+        # # Check for valid filename
+        # if filename != '':
+        #     if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
+        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
+        #         return
+        #     else:
+        #         payload['filename'] = filename
         # Adding timing code
         if timestamp == 0:
             timestamp = unix_time()
@@ -550,7 +695,7 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
 
-    def query(query, host, params={}):
+    def query(self, query):
         """
         Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -558,18 +703,14 @@ class experiment:
         ----------
         query : list
             Description of the data to send funcx. See queries format in the documentation on GitHub
-        experiment_id : string
-            MDML experiment ID for which the data belongs
-        host : string
-            Host of the MDML instance
         
         Returns
         -------
         list
-            Data structure that will be passed to FuncX
+            Experiment data from MDML's InfluxDB
         """
         import json
-        resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&parameters={json.dumps(params)}&experiment_id={self.experiment_id}")
+        resp = requests.get(f"http://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
         return json.loads(resp.text)
 
     def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
@@ -620,13 +761,22 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
                 
-    def reset(self):
+    def reset(self, hard_reset=False):
         """
         Publish a reset message on the MDML message broker to reset
         your current experiment.
+
+        Parameters
+        ----------
+        hard_reset : bool
+            True if the experiment should be ended regardless of analysis 
+            progress.            
         """
         topic = "MDML/" + self.experiment_id + "/RESET"
-        self.client.publish(topic, '{"reset": 1}')
+        if hard_reset:
+            self.client.publish(topic, '{"reset": 1, "hard_reset": 1}')
+        else:
+            self.client.publish(topic, '{"reset": 1}')
     
     def start_debugger(self):
         """
@@ -682,7 +832,22 @@ class experiment:
             self.debugger.terminate()
         print("Debugger stopped.")
 
-    def replay_experiment(self, filename):
+    def replay_experiment_run(self, experiment_run_id):
+        """
+        Tell MDML to replay a past experiment.
+
+        Parameters
+        ----------
+        experiment_run_id : str
+            Experiment run ID supplied by the user - this is different than 
+            an experiment ID. This could be an integer if no run ID was 
+            supplied by the user for the original experiment.
+        """
+        topic = "MDML/" + self.experiment_id + "/REPLAY/" + experiment_run_id
+        self.client.publish(topic, '{"replay": 1}')
+
+
+    def replay_experiment(self, filename, speedup=1):
         """
         Replay an old experiment by specifying a tar file output from MDML
         
@@ -691,6 +856,8 @@ class experiment:
         ----------
         filename : str
             absolute filepath of the tar file for the experiment you would like to replay.
+        speedup : int
+            speedup of data rates
         """
         # Validate file
         try:
@@ -734,7 +901,7 @@ class experiment:
         exp_start_time = int(min(first_timestamps))
         exp_end_time = int(max(last_timestamps))
         exp_duration = (exp_end_time - exp_start_time)/60000000000 # nansecs to mins 60,000,000,000
-        print("Experiment replay will take " + str(exp_duration) + " minutes.")
+        print("Experiment replay will take " + str(float(exp_duration/speedup)) + " minutes.")
         sim_start_time = unix_time(ret_int=True)
         
         try:
@@ -744,16 +911,18 @@ class experiment:
                                                         exp_dir, \
                                                         device_data_types[i], \
                                                         exp_start_time, \
-                                                        sim_start_time,))
+                                                        sim_start_time, \
+                                                        speedup))
                 tmp.setDaemon(True)
                 tmp.start()
             time.sleep(4)
         except KeyboardInterrupt:
             print("Ending experiment with MDML.")
             self.reset()
+            self.disconnect()
             return
 
-    def _replay_file(self, device_id, file_dir, data_type, exp_start_time, sim_start_time):
+    def _replay_file(self, device_id, file_dir, data_type, exp_start_time, sim_start_time, speedup):
         with open(file_dir + '/' + device_id) as data_file:
             _ = data_file.readline()
             data = data_file.readlines()
@@ -761,20 +930,21 @@ class experiment:
         while True:
             # Get next timestamp TODO delimiter needs to come from experiment configuration file
             next_dat_time = int(re.split('\t', data[0])[0])
-            exp_delta = next_dat_time - exp_start_time
+            exp_delta = float(next_dat_time - exp_start_time)/speedup
             sim_delta = unix_time(ret_int=True) - sim_start_time
 
             if (sim_delta >= exp_delta):
                 if data_type == "text/numeric":
-                    new_time = str(sim_start_time + exp_delta)
-                    next_row = data[0].split('\t')
-                    next_row[0] = new_time
-                    next_row = '\t'.join(next_row)
-                    self.publish_data(device_id, next_row, data_delimiter='\t', influxDB=True)
+                    # new_time = str(sim_start_time + exp_delta)
+                    # next_row = data[0].split('\t')
+                    # next_row[0] = new_time
+                    # next_row = '\t'.join(next_row)
+                    # self.publish_data(device_id, next_row, data_delimiter='\t', influxDB=True)
+                    self.publish_data(device_id, data[0], data_delimiter='\t', influxDB=True)
                 elif data_type == "image":
                     img_filename = file_dir + '/' + re.split('\t', data[0])[1]
                     img_byte_string = read_image(img_filename)
-                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + exp_delta)
+                    self.publish_image(device_id, img_byte_string, timestamp=sim_start_time + sim_delta)
                 else:
                     print("DATA_TYPE IN CONFIGURATION NOT SUPPORTED")
                 del data[0]

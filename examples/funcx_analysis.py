@@ -2,6 +2,13 @@ import time
 import json
 import random
 import mdml_client as mdml # pip install mdml_client #
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--register", help="register the function with FuncX",
+                    action="store_true")
+parser.add_argument("--local", help="run the function locally",
+                    action="store_true")
+args = parser.parse_args()
 
 print("**************************************************************************")
 print("*** This example will publish data 5 times and then call an analysis.  ***")
@@ -12,7 +19,7 @@ time.sleep(5)
 # Approved experiment ID (supplied by MDML administrators - will not work otherwise)
 Exp_ID = 'TEST'
 # MDML message broker host
-host = 'merf.egs.anl.gov'
+host = 'merfpoc.egs.anl.gov'
 # MDML username and password
 username = 'test'
 password = 'testtest'
@@ -87,7 +94,7 @@ def user_func(msg):
     elif msg_obj['type'] == "ERROR":
         print(f'MDML ERROR: {msg_obj["message"]}')
     elif msg_obj['type'] == "RESULTS":
-        print(f'MDML ANALYSIS RESULT FOR "{msg_obj["analysis_id"]}": {msg_obj["message"]}')
+        print(f'MDML RESULTS: {msg_obj["message"]}')
     else:
         print("ERROR WITHIN MDML, CONTACT ADMINS.")
 My_MDML_Exp.set_debug_callback(user_func)
@@ -120,41 +127,34 @@ def random_data(size):
         dat.append(str(random.random()))
     return dat
 
-# Init vars for funcx analysis
-queries = [
-    {
+# # The function below was registered with funcx to get the above func_id
+def sum_vars(params):
+    import mdmlclient
+    import mdml_client as mdml
+    query = [{
         "device": "DEVICE_A",
         "variables": [],
         "last" : 1
-    }
-]
-# FuncX endpoint id and function id
-# funcx_func_id = "d1e7202b-510c-43e4-9247-5329ace8c784" # sums variables 1 thru 5
-funcx_func_id = "3796e6c7-7a39-4354-95a1-02c38063cc6c" # sums variables 1 thru 5
-funcx_func_id_broken = "f1bf1dcf-a37b-4346-81e6-4dbf6709dfe7" # sums variables 1 thru 5
-# funcx_func_id = "49624e16-067f-4a1a-9375-290a728eef50" # sums vars 1-5 with sleep
-funcx_endp_id = "2895306b-569f-4ec9-815a-bcab73ea32f7" # 146.137.10.50 endpoint
-# funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
-
-# # The function below was registered with funcx to get the above func_id
-def sum_vars(data):
-    import time
-    time.sleep(5)
-    row = data['DEVICE_A'][0]
+    }]
+    exp = mdml.experiment('TEST','test','testtest','merfpoc.egs.anl.gov')
+    dat = exp.query(query)
+    print(dat)
+    row = dat['DEVICE_A'][0]
     var_sum = float(row['variable1']) + float(row['variable2']) + float(row['variable3']) + float(row['variable4']) + float(row['variable5'])
     return str(var_sum)
-#
-# # The input parameter from MDML looks like this:
-# [{ "DEVICE_A": [{
-#   'time': '2019-12-20T18:23:09.883Z', 
-#   'variable1': 0.7148689571386346, 
-#   'variable2': 0.3303284415100972, 
-#   'variable3': 0.7029252964954437, 
-#   'variable4': 0.5739044292459075, 
-#   'variable5': 0.09692214917245678
-# }]}]
-#
-# # The return value is a string: '2.4817439194'
+
+if args.register:
+    from funcx.sdk.client import FuncXClient
+    fxc = FuncXClient()
+    funcx_func_uuid = fxc.register_function(sum_vars,
+        description="Sum 5 variables")
+    print(f'FuncX function UUID: {funcx_func_uuid}')
+else:
+    funcx_func_uuid = '2b5b472c-8f04-4dec-bc03-fe7ed0717cfa'
+
+funcx_endp_id = "a62a830a-5cd1-42a8-a4a8-a44fa552c899" # merf.egs.anl.gov endpoint
+# funcx_endp_id = "2895306b-569f-4ec9-815a-bcab73ea32f7" # 146.137.10.50 endpoint
+# funcx_endp_id = "4b116d3c-1703-4f8f-9f6f-39921e5864df" # public tutorial endpoint
 
 reset = False
 try:
@@ -170,9 +170,19 @@ try:
 
             # run funcx analysis
             time.sleep(.2)
-            # Send message to start analysis
-            My_MDML_Exp.publish_analysis("ANALYSIS", queries, funcx_func_id_broken, funcx_endp_id)
-            
+            if args.local:
+                # Run locally
+                print(sum_vars({}))
+                #Send message to FuncX directly
+                # from funcx.sdk.client import FuncXClient
+                # fxc = FuncXClient()
+                # res = fxc.run({}, endpoint_id=funcx_endp_id, function_id=funcx_func_uuid)
+                # print(res)
+                # time.sleep(50)
+                # print(fxc.get_result(res))
+            else:
+                # Send message to start analysis
+                My_MDML_Exp.publish_analysis("ANALYSIS", funcx_func_uuid, funcx_endp_id)
             # Sleep to send data once a second
             i += 1
             time.sleep(.7)
