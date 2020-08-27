@@ -418,9 +418,6 @@ class experiment:
         """
         Send experiment configuration to MDML
 
-        Parameters
-        ----------
-
         Returns
         -------
         boolean
@@ -643,6 +640,7 @@ class experiment:
         """
         Publish an image to MDML
 
+
         Parameters
         ----------
         device_id : str
@@ -746,11 +744,13 @@ class experiment:
         """
         Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
+
         Parameters
         ----------
         query : list
             Description of the data to send funcx. See queries format in the documentation on GitHub
         
+
         Returns
         -------
         list
@@ -812,6 +812,7 @@ class experiment:
         """
         Publish a reset message on the MDML message broker to reset
         your current experiment.
+
 
         Parameters
         ----------
@@ -970,6 +971,9 @@ class experiment:
             return
 
     def _replay_file(self, device_id, file_dir, data_type, exp_start_time, sim_start_time, speedup):
+        """
+        Replay individual file
+        """
         with open(file_dir + '/' + device_id) as data_file:
             _ = data_file.readline()
             data = data_file.readlines()
