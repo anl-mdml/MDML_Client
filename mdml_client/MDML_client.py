@@ -279,7 +279,7 @@ class experiment:
         Create connection to BIS S3 object store for use in image streaming
 
         Parameters
-        ==========
+        ----------
         s3_access_key : str
             S3 access key provided by an MDML admin
         s3_secret_key : str
@@ -306,7 +306,7 @@ class experiment:
         self.tokens = cli.login(refresh_tokens=True, no_local_server=True, 
                                 no_browser=True, requested_scopes=scopes) 
 
-    def add_config(self, config, experiment_run_id=""):
+    def add_config(self, config={}, experiment_run_id="", auto=False):
         """
         Add a configuration to the experiment. Added only locally - use 
         experiment.send_config() to send to the MDML
@@ -317,9 +317,11 @@ class experiment:
         config : str or dict
             If string, contains a filepath to a json file with the experiment's configuration.
             If dict, the dict will be the experiment's configuration
-
         experiment_run_id : str
             String containing the experiment run ID
+        auto : bool
+            True for the MDML to auto build your configuration.
+            False requires you to build the config manually
 
 
         Returns
@@ -328,78 +330,96 @@ class experiment:
             True for a valid configuration, False otherwise
 
         """
-
-        if type(config) == str:
-            with open(config, 'r') as config_file:
-                config_str = config_file.read()
-            try:
-                config = json.loads(config_str)
-            except:
-                print("Error in json.loads() call on the config file contents.")
-                return
-        elif type(config) == dict:
-            config = config
+        if auto:
+            if config != {}:
+                print("Warning! Using auto will discard any configuration supplied here.")
+            config = {
+                "experiment": {
+                    "experiment_id": self.experiment_id,
+                    "experiment_run_id": experiment_run_id,
+                    "experiment_notes": f"{self.experiment_id} experiment. (Auto generated configuration)",
+                    "delete_db_data_when_reset": True,
+                    "experiment_devices": [],
+                    "allow_auto_gen_devices": True
+                },
+                "devices": []
+            }
+            self.config = json.dumps(config)
         else:
-            print("Supplied configuration type is not supported. Must be of type str or type dict.")
+            if type(config) == str:
+                with open(config, 'r') as config_file:
+                    config_str = config_file.read()
+                try:
+                    config = json.loads(config_str)
+                except:
+                    print("Error in json.loads() call on the config file contents.")
+                    return
+            elif type(config) == dict:
+                config = config
+            else:
+                print("Supplied configuration type is not supported. Must be of type str or type dict.")
 
-        # Validating top level section
-        if 'experiment' not in config or 'devices' not in config:
-            print("""Highest level of configuration json must be a dictionary 
-            with the keys: 'experiment' and 'devices'""")
-            return False
-        
-        # Validating experiment section
-        experiment_section = config['experiment']
-            # 'experiment_number' not in experiment_keys or\
-        if 'experiment_id' not in experiment_section or\
-            'experiment_notes' not in experiment_section or\
-            'experiment_devices' not in experiment_section:
-            print("""Missing required fields in the 'experiment' section of your
-            configuration""")
-            return False
-
-        # Validating devices section
-        devices = config['devices']
-        for device in devices:
-            if 'device_id' not in device or\
-                'device_name' not in device or\
-                'device_output' not in device or\
-                'device_output_rate' not in device or\
-                'device_data_type' not in device or\
-                'device_notes' not in device or\
-                'headers' not in device or\
-                'data_types' not in device or\
-                'data_units' not in device:
-                print("""Missing required fields in the 'devices' section of your 
+            # Validating top level section
+            if 'experiment' not in config or 'devices' not in config:
+                print("""Highest level of configuration json must be a dictionary 
+                with the keys: 'experiment' and 'devices'""")
+                return False
+            
+            # Validating experiment section
+            experiment_section = config['experiment']
+                # 'experiment_number' not in experiment_keys or\
+            if 'experiment_id' not in experiment_section or\
+                'experiment_notes' not in experiment_section or\
+                'experiment_devices' not in experiment_section:
+                print("""Missing required fields in the 'experiment' section of your
                 configuration""")
                 return False
 
-        if self.tokens:
-            try:
-                config['globus_token'] = self.tokens['funcx_service']['access_token']
-            except:
-                print("No Auth token found. Have you run .globus_login() to create one?\
-                    This can be ignored if you are not using funcX for analysis.")
-                pass
+            # Validating devices section
+            devices = config['devices']
+            for device in devices:
+                if 'device_id' not in device or\
+                    'device_name' not in device or\
+                    'device_output' not in device or\
+                    'device_output_rate' not in device or\
+                    'device_data_type' not in device or\
+                    'device_notes' not in device or\
+                    'headers' not in device or\
+                    'data_types' not in device or\
+                    'data_units' not in device:
+                    print("""Missing required fields in the 'devices' section of your 
+                    configuration""")
+                    return False
 
-        if experiment_run_id != "":
-            # Check run id only contains letters and underscores
-            if re.match(r"^[\w]*$", experiment_run_id):
-                config['experiment']['experiment_run_id'] = experiment_run_id
+            if self.tokens:
+                try:
+                    config['globus_token'] = self.tokens['funcx_service']['access_token']
+                except:
+                    print("No Auth token found. Have you run .globus_login() to create one?\
+                        This can be ignored if you are not using funcX for analysis.")
+                    pass
+
+            if experiment_run_id != "":
+                # Check run id only contains letters and underscores
+                if re.match(r"^[\w]*$", experiment_run_id):
+                    config['experiment']['experiment_run_id'] = experiment_run_id
+                    # Set config as string to prepare for sending to MDML
+                    self.config = json.dumps(config)
+                    print("Valid configuration found, now use .send_config() to send it to the MDML.")
+                    return True
+                else:
+                    print("Experiment run ID contains characters other than letters, numbers, and underscores.")
+                    return False
+            else: # No need to add a blank run ID
                 # Set config as string to prepare for sending to MDML
-                self.config = json.dumps(config)
-                print("Valid configuration found, now use .send_config() to send it to the MDML.")
-                return True
-            else:
-                print("Experiment run ID contains characters other than letters, numbers, and underscores.")
-                return False
-        else: # No need to add a blank run ID
-            # Set config as string to prepare for sending to MDML
-            self.config = json.dumps(config) 
+                self.config = json.dumps(config) 
 
     def send_config(self):
         """
         Send experiment configuration to MDML
+
+        Parameters
+        ----------
 
         Returns
         -------
@@ -417,7 +437,7 @@ class experiment:
             print("Error sending config.")
             return False
 
-    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t', influxDB=True):
+    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t'):
         """
         Publish vector data to MDML.
 
@@ -437,8 +457,6 @@ class experiment:
                 unix time in nanosecond (as string) - one timestamp for all data points
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
-        influxDB : boolean
-            True if the data should be stored in InfluxDB, False otherwise (default is True)
         """
         if type(data) != dict:
             print("Data parameter is not a dictionary.")
@@ -452,17 +470,17 @@ class experiment:
             'data_type': 'vector',
             'timestamp': timestamp
         }
-        # Optional parameters 
         payload['data_delimiter'] = data_delimiter
-        if influxDB:
-            payload['influx_measurement'] = device_id.upper()
+        payload['influx_measurement'] = device_id.upper()
+        payload['sys_timestamp'] = unix_time()
+        # Optional parameters 
         if timestamp != 'none':
             payload['timestamp'] = timestamp
         
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
       
-    def publish_data(self, device_id, data, data_delimiter='null', influxDB = True, timestamp = 0):
+    def publish_data(self, device_id, data, data_delimiter='', timestamp = 0, add_device=False):
         """
         Publish data to MDML
         
@@ -472,28 +490,57 @@ class experiment:
         device_id : str
             Unique string identifying the device that created the data.
             This should correspond with the experiment's configuration.
-        data : str
-            String containing the data to send
+        data : str or dict or list
+            String, dictionary, or list containing the data
         data_delimiter : str
-            String containing the delimiter of the data  (default is 'null', no delimiter)
-        influxDB : boolean
-            True if the data should be stored in InfluxDB, False otherwise (default is True) 
+            String containing the delimiter of the data.
+            Only use with data of type string (default is '', no delimiter)
+        timestamp : int
+            Unix time in nanoseconds that the data should the timestamped
+        add_device : bool
+            True if the device should be automatically added to the experiment's configuration (default is False) 
         """
+        # Checking for misuse of the client
+        if add_device and type(data) != dict:
+            Exception("When using add_device, the data type must be dict \
+                in order for MDML to infer variable names")
+        # Figuring out data type
+        if type(data) == dict:
+            payload = {
+                'data': '\t'.join([str(v) for v in data.values()]),
+                'headers': '\t'.join([str(k) for k in data.keys()]),
+                'data_type': 'text/numeric',
+                'data_delimiter': '\t',
+                'influx_measurement': device_id.upper()
+            }
+        elif type(data) == list:
+            payload = {
+                'data': '\t'.join([str(d) for d in data]),
+                'data_type': 'text/numeric',
+                'data_delimiter': '\t',
+                'influx_measurement': device_id.upper()
+            }
+        elif type(data) == str:
+            if data_delimiter == '':
+                print("Warning! No data delimiter specified while supplying\
+                    a string to the data parameter. The entire data parameter\
+                    will be read as one value.")
+            payload = {
+                'data': data,
+                'data_type': 'text/numeric',
+                'data_delimiter': data_delimiter,
+                'influx_measurement': device_id.upper()
+            }
 
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
-        # Base payload
-        payload = {
-            'data': data
-        }
 
         # Optional parameters 
-        if data_delimiter != 'null':
-            payload['data_delimiter'] = data_delimiter
-        if influxDB:
-            payload['influx_measurement'] = device_id.upper()
+        if add_device:
+            payload['add_device'] = add_device
         # Added for system timings
         payload['timestamp'] = unix_time()
+        payload['sys_timestamp'] = unix_time()
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
@@ -666,8 +713,8 @@ class experiment:
             function in this package
         metadata : dict
             Dictionary containing any metadata for the image. Data types of 
-            the dictionary values must not be changed. Keys cannot include
-            "time" or "filepath".
+            the dictionary values must not be changed. Dictionary keys must 
+            not include "time" or "filepath".
         """
 
         # Creating MQTT topic
