@@ -279,7 +279,7 @@ class experiment:
         Create connection to BIS S3 object store for use in image streaming
 
         Parameters
-        ==========
+        ----------
         s3_access_key : str
             S3 access key provided by an MDML admin
         s3_secret_key : str
