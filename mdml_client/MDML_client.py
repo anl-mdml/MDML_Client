@@ -130,7 +130,7 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
-def GET_images(image_metadata, experiment_id, host):
+def GET_images(image_metadata, experiment_id, host, verify_cert=True):
     """
     Retrieves images from the MDML using a GET request. Created for
     use in FuncX functions that analyze images.
@@ -144,6 +144,8 @@ def GET_images(image_metadata, experiment_id, host):
         Hostname/IP of the MDML host
     experiment_id : string
         MDML Experiment ID
+    verify_cert : bool
+        Boolean is requests should verify the SSL cert
 
     Returns
     -------
@@ -152,7 +154,7 @@ def GET_images(image_metadata, experiment_id, host):
     """
     imgs = []
     for img in image_metadata:
-        resp = requests.get(f"http://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}")
+        resp = requests.get(f"https://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}", verify=verify_cert)
         imgs.append(resp.content)
     return imgs
 
