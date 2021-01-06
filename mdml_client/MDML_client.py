@@ -14,6 +14,7 @@ import time
 import boto3
 import requests
 import multiprocessing
+import matplotlib.image as mpimg
 from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
@@ -94,6 +95,26 @@ def _read_image_file(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
+def read_any_image(file_name):
+    """
+    Read image from a local file and convert to bytes from sending
+    over the MDML.
+
+
+    Parameters
+    ----------
+    file_name : string
+        file name of the file to be opened
+    
+    Returns
+    -------
+    string
+        String of bytes that can be used as the second argument in 
+        experiment.publish_image()
+    """
+    img = mpimg.imread("/home/jelias/c/Downloads/2019-2/MLLZO_1s1pvp4i12kV_real_scan_2min_00038_00002.tif")
+
+
 def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
     """
     Read image from a local file and convert to bytes from sending
@@ -117,7 +138,11 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         String of bytes that can be used as the second argument in 
         experiment.publish_image()
     """
-    source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+    try:
+        source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+    except:
+        source = mpimg.imread(file_name)
+        source = source[...,::-1]
     if resize_x != 0 and resize_y != 0:
         source = cv2.resize(source, (resize_x, resize_y))
     if rescale_pixel_intensity:
@@ -125,7 +150,7 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
         min_val = np.min(source)
         max_val = np.max(source)
         source = (source - min_val) * (255/(max_val - min_val))
-    _, img = cv2.imencode('.jpg', source)
+    _, img = cv2.imencode('.png', source)
     img_b64bytes = b64encode(img)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
