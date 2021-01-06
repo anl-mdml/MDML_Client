@@ -1,10 +1,18 @@
-import sys
-sys.path.insert(1, '../')
+# Parameters to run the example
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--host", help="MDML instance host",
+                        required=True)
+parser.add_argument("--username", help="MDML username",
+                        required=True)
+parser.add_argument("--password", help="MDML password",
+                        required=True)
+args = parser.parse_args()
 
 import time
 import mdml_client as mdml
 
-exp = mdml.experiment("TEST", "test", "testtest", "merfpoc.egs.anl.gov")
+exp = mdml.experiment("TEST", args.username, args.password, args.host)
 exp.add_config(auto=True)
 exp.send_config()
 time.sleep(1)

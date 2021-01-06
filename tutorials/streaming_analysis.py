@@ -1,5 +1,11 @@
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("--host", help="MDML instance host",
+                        required=True)
+parser.add_argument("--username", help="MDML username",
+                        required=True)
+parser.add_argument("--password", help="MDML password",
+                        required=True)
 parser.add_argument("--register", help="register the function with FuncX",
 			action="store_true")
 parser.add_argument("--run",
@@ -40,7 +46,7 @@ import time
 sys.path.insert(1, '../') # using local mdml_client
 import mdml_client as mdml
 
-exp = mdml.experiment("TEST", "test", "testtest", "merfpoc.egs.anl.gov")
+exp = mdml.experiment("TEST", args.username, args.password, args.host)
 exp.add_config(auto=True)
 exp.send_config()
 time.sleep(1)
@@ -53,9 +59,9 @@ exp.publish_data(device_id = "DATA1", data = data, add_device = True)
 # Define function parameters 
 params = {
 	'experiment_id': 'TEST',
-	'user': 'test',
-  	'pass': 'testtest',
-	'host': 'merfpoc.egs.anl.gov'
+	'user': args.username,
+  	'pass': args.password,
+	'host': args.host
     # Other function specific params here.
 }
 funcx_endp_id = "a62a830a-5cd1-42a8-a4a8-a44fa552c899" # merf.egs.anl.gov endpoint
