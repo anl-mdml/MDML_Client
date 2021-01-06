@@ -140,17 +140,26 @@ def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False)
     """
     try:
         source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
+        if resize_x != 0 and resize_y != 0:
+            source = cv2.resize(source, (resize_x, resize_y))
+        if rescale_pixel_intensity:
+            source = np.nan_to_num(source)
+            min_val = np.min(source)
+            max_val = np.max(source)
+            source = (source - min_val) * (255/(max_val - min_val))
+        _, img = cv2.imencode('.png', source)
     except:
+        print("Image could not be read by OpenCV. Trying matplotlib imread.")
         source = mpimg.imread(file_name)
         source = source[...,::-1]
-    if resize_x != 0 and resize_y != 0:
-        source = cv2.resize(source, (resize_x, resize_y))
-    if rescale_pixel_intensity:
-        source = np.nan_to_num(source)
-        min_val = np.min(source)
-        max_val = np.max(source)
-        source = (source - min_val) * (255/(max_val - min_val))
-    _, img = cv2.imencode('.png', source)
+        if resize_x != 0 and resize_y != 0:
+            source = cv2.resize(source, (resize_x, resize_y))
+        if rescale_pixel_intensity:
+            source = np.nan_to_num(source)
+            min_val = np.min(source)
+            max_val = np.max(source)
+            source = (source - min_val) * (255/(max_val - min_val))
+        _, img = cv2.imencode('.png', source)
     img_b64bytes = b64encode(img)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
