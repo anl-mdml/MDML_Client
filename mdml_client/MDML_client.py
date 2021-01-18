@@ -14,6 +14,7 @@ import time
 import boto3
 import requests
 import multiprocessing
+import matplotlib.image as mpimg
 from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
@@ -59,78 +60,30 @@ def unix_time(ret_int=False):
     else:
         return unix_time
 
-def _read_image_file(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
+def read_image(file_name):
     """
     Read image from a local file and convert to bytes from sending
     over the MDML.
-    
+
 
     Parameters
     ----------
     file_name : string
         file name of the file to be opened
-    resize_x : int
-        horizontal size of the resized image
-    resize_y : int
-        vertical size of the resized image
-
+    
     Returns
     -------
     string
         String of bytes that can be used as the second argument in 
         experiment.publish_image()
     """
-    with open(file_name, 'rb') as open_file:
-            image_bytes = open_file.read()
-    npimg = np.fromstring(image_bytes, dtype=np.uint8)
-    source = cv2.imdecode(npimg, 1)
-    if resize_x != 0 and resize_y != 0:
-        source = cv2.resize(source, (resize_x, resize_y))
-    # img_bytes = cv2.imencode('.jpg', img_small)[1].tobytes()
-    # processed_queue.put(img_bytes)
-    _, img = cv2.imencode('.jpg', source)
-    img_bytes = img.tobytes()
+    with open(file_name, 'rb') as buf:
+        img_bytes = buf.read()
     img_b64bytes = b64encode(img_bytes)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
-def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
-    """
-    Read image from a local file and convert to bytes from sending
-    over the MDML.
-
-
-    Parameters
-    ----------
-    file_name : string
-        file name of the file to be opened
-    resize_x : int
-        horizontal size of the resized image
-    resize_y : int
-        vertical size of the resized image
-    rescale_pixel_intensity : bool
-        scale the pixel intensities between 0-255 according to the min and max pixel values.
-
-    Returns
-    -------
-    string
-        String of bytes that can be used as the second argument in 
-        experiment.publish_image()
-    """
-    source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
-    if resize_x != 0 and resize_y != 0:
-        source = cv2.resize(source, (resize_x, resize_y))
-    if rescale_pixel_intensity:
-        source = np.nan_to_num(source)
-        min_val = np.min(source)
-        max_val = np.max(source)
-        source = (source - min_val) * (255/(max_val - min_val))
-    _, img = cv2.imencode('.jpg', source)
-    img_b64bytes = b64encode(img)
-    img_byte_string = img_b64bytes.decode('utf-8')
-    return img_byte_string
-
-def GET_images(image_metadata, experiment_id, host):
+def GET_images(image_metadata, experiment_id, host, verify_cert=True):
     """
     Retrieves images from the MDML using a GET request. Created for
     use in FuncX functions that analyze images.
@@ -144,16 +97,18 @@ def GET_images(image_metadata, experiment_id, host):
         Hostname/IP of the MDML host
     experiment_id : string
         MDML Experiment ID
+    verify_cert : bool
+        Boolean is requests should verify the SSL cert
 
     Returns
     -------
-    list
-        List of bytes, one element for each image from the metadata
+    dict
+        Dict where keys are filepaths and values are bytestrings
     """
-    imgs = []
+    imgs = {}
     for img in image_metadata:
-        resp = requests.get(f"http://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}")
-        imgs.append(resp.content)
+        resp = requests.get(f"https://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}", verify=verify_cert)
+        imgs[img['filepath']] = resp.content
     return imgs
 
 def query_to_pandas(device, query_result, sort=True):
@@ -188,7 +143,7 @@ def query_to_pandas(device, query_result, sort=True):
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
 
-def query(query, experiment_id, host):
+def query(query, experiment_id, host, verify_cert=True):
     """
     Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -200,6 +155,8 @@ def query(query, experiment_id, host):
         MDML experiment ID for which the data belongs
     host : string
         Host of the MDML instance
+    verify_cert : bool
+        Boolean is requests should verify the SSL cert
     
     Returns
     -------
@@ -207,7 +164,7 @@ def query(query, experiment_id, host):
         Data structure that will be passed to FuncX
     """
     import json
-    resp = requests.get(f"http://{host}:1880/query?query={json.dumps(query)}&experiment_id={experiment_id}")
+    resp = requests.get(f"https://{host}:1880/query?query={json.dumps(query)}&experiment_id={experiment_id}", verify=verify_cert)
     return json.loads(resp.text)
 
 class experiment:
@@ -301,10 +258,12 @@ class experiment:
         """
         Perform a Globus login to acquire auth tokens for FuncX analyses. Must be done before experiment.add_config()
         """
-        scopes = ["https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"]
+        fx_scope = "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
+        search_scope = "urn:globus:auth:scope:search.api.globus.org:all"
+        scopes = [fx_scope, search_scope, "openid"]
         cli = NativeClient(client_id=CLIENT_ID)
         self.tokens = cli.login(refresh_tokens=True, no_local_server=True, 
-                                no_browser=True, requested_scopes=scopes) 
+                                no_browser=True, requested_scopes=scopes)
 
     def add_config(self, config={}, experiment_run_id="", auto=False):
         """
@@ -434,7 +393,7 @@ class experiment:
             print("Error sending config.")
             return False
 
-    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t'):
+    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t', add_device=False, tags=None):
         """
         Publish vector data to MDML.
 
@@ -444,9 +403,10 @@ class experiment:
         device_id : str
             Unique string identifying the device this data originated from.
             This should correspond with the experiment's configuration
-        data : dict
+        data : dict or list
             Dictionary where keys are the headers for the data device and values are
-            tab delimited strings of data values
+            tab delimited strings of data values. List where each element is a list 
+            of values corresponding to the header name listed for that device.
         timestamp : str
             1 of 3 options: 
                 'none' - influxdb creates timestamp
@@ -454,9 +414,13 @@ class experiment:
                 unix time in nanosecond (as string) - one timestamp for all data points
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
+        add_device : bool
+            True if the device should be automatically added to the experiment's configuration (default: False)
+        tags : list
+            List of variable names (from data) that should be used as tags in InfluxDB (tags should have a finite set of values)
         """
-        if type(data) != dict:
-            print("Data parameter is not a dictionary.")
+        if type(data) != dict and type(data) != list:
+            print("Error! Data parameter is not a dictionary or a list.")
             return
 
         # Creating MQTT topic
@@ -471,6 +435,16 @@ class experiment:
         payload['influx_measurement'] = device_id.upper()
         payload['sys_timestamp'] = unix_time()
         # Optional parameters 
+        if add_device:
+            if tags is None:
+                print("Error! 'tags' parameter must be specified when using 'add_device'. "\
+                "An empty list can be defined if no tags are needed.")
+            else:
+                assert type(tags) == list
+                for tag in tags:
+                    assert tag in data.keys()
+                payload['influx_tags'] = tags
+                payload['add_device'] = add_device
         if timestamp != 'none':
             payload['timestamp'] = timestamp
         
@@ -491,11 +465,11 @@ class experiment:
             String, dictionary, or list containing the data
         data_delimiter : str
             String containing the delimiter of the data.
-            Only use with data of type string (default is '', no delimiter)
+            Only needed when data is of type string (default: "", no delimiter)
         timestamp : int
             Unix time in nanoseconds that the data should the timestamped
         add_device : bool
-            True if the device should be automatically added to the experiment's configuration (default is False) 
+            True if the device should be automatically added to the experiment's configuration (default: False) 
         """
         # Checking for misuse of the client
         if add_device and type(data) != dict:
@@ -504,16 +478,20 @@ class experiment:
         # Figuring out data type
         if type(data) == dict:
             payload = {
-                'data': '\t'.join([str(v) for v in data.values()]),
-                'headers': '\t'.join([str(k) for k in data.keys()]),
+                'data': data,
+                # 'data': '\t'.join([str(v) for v in data.values()]),
+                # 'headers': '\t'.join([str(k) for k in data.keys()]),
                 'data_type': 'text/numeric',
+                'data_format': 'dict',
                 'data_delimiter': '\t',
                 'influx_measurement': device_id.upper()
             }
         elif type(data) == list:
             payload = {
-                'data': '\t'.join([str(d) for d in data]),
+                'data': data,
+                # 'data': '\t'.join([str(d) for d in data]),
                 'data_type': 'text/numeric',
+                'data_format': 'list',
                 'data_delimiter': '\t',
                 'influx_measurement': device_id.upper()
             }
@@ -525,6 +503,7 @@ class experiment:
             payload = {
                 'data': data,
                 'data_type': 'text/numeric',
+                'data_format': 'string',
                 'data_delimiter': data_delimiter,
                 'influx_measurement': device_id.upper()
             }
@@ -541,7 +520,7 @@ class experiment:
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
 
-    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}, funcx_callback=None):
+    def publish_analysis(self, device_id, function_id, endpoint_id, parameters={}, funcx_callback=None, trigger=None):
         """
         Publish a message to run an analysis
 
@@ -558,6 +537,9 @@ class experiment:
             Custom parameters to be accessed in the second element of your FuncX data parameter
         funcx_callback : dict
             Dictionary with another set of FuncX params to run with data output from the first FuncX call
+        trigger : list
+            List of device IDs that when data is generated will trigger this 
+            analysis again with the same parameters 
         """
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/FUNCX/" + device_id
@@ -578,6 +560,11 @@ class experiment:
             assert "save_intermediate" in funcx_callback.keys()
             # Add to payload
             payload['funcx_callback'] = funcx_callback
+
+        # Add triggers
+        if trigger is not None:
+            assert type(trigger) is list
+            payload['trigger'] = trigger
 
         # Add auth if set
         if self.tokens:
@@ -688,7 +675,7 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
         
-    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}):
+    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}, add_device=False):
         """
         Publish an image to MDML
 
@@ -713,6 +700,8 @@ class experiment:
             Dictionary containing any metadata for the image. Data types of 
             the dictionary values must not be changed. Dictionary keys must 
             not include "time" or "filepath".
+        add_device : bool
+            True if the device should be automatically added to the experiment's configuration (default: False)
         """
 
         # Creating MQTT topic
@@ -725,22 +714,18 @@ class experiment:
         }
         # Adding metadata if necessary
         payload['metadata'] = metadata
-        # # Check for valid filename
-        # if filename != '':
-        #     if re.match(r"^[\w]+\.[A-Za-z0-9]+$", filename) == None:
-        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
-        #         return
-        #     else:
-        #         payload['filename'] = filename
         # Adding timing code
         if timestamp == 0:
             timestamp = unix_time()
+        # Adding other params
+        if add_device:
+            payload['add_device'] = add_device
         payload['timestamp'] = timestamp
         payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)
 
-    def query(self, query):
+    def query(self, query, verify_cert=True):
         """
         Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
 
@@ -749,7 +734,8 @@ class experiment:
         ----------
         query : list
             Description of the data to send funcx. See queries format in the documentation on GitHub
-        
+        verify_cert : bool
+            Boolean is requests should verify the SSL cert
 
         Returns
         -------
@@ -757,7 +743,7 @@ class experiment:
             Experiment data from MDML's InfluxDB
         """
         import json
-        resp = requests.get(f"http://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}")
+        resp = requests.get(f"https://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}", verify=verify_cert)
         return json.loads(resp.text)
 
     def _publish_image_benchmarks(self, device_id, img_byte_string, filename = '', timestamp = 0, size = 0):
@@ -840,6 +826,33 @@ class experiment:
                 'userdata': self.msg_queue
             })
         self.debugger.start()
+
+    def listener(self, analysis_names=None, callback=None):
+        """
+        Init a listener to receive any events pertaining to the MDML experiment ID given.
+        
+        
+        Parameters
+        ----------
+        analysis_names : list
+            A list of MDML analyses that you would like to listen to for results.
+        callback : function
+            A callback function to be run on the received messages. 
+            This function must have three parameters. Typically, only the
+            third parameter is used because it contains the topic and message
+            as attributes.
+        """
+        if callback is None:
+            def default_func(client, userdata, message):
+                print(f'TOPIC: {message.topic}\nPAYLOAD: {message.payload.decode("utf-8")}')
+            callback = default_func
+        topics = [f"MDML_DEBUG/{self.experiment_id}"]
+        if analysis_names is not None:
+            for name in analysis_names:
+                topics.append(f"MDML/{self.experiment_id}/RESULTS/{name.upper()}")
+        subscribe.callback(callback, topics, hostname=self.host,
+            auth={'username': self.username, 'password': self.password})
+
 
     def disconnect(self):
         """
