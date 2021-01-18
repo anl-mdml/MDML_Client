@@ -60,107 +60,26 @@ def unix_time(ret_int=False):
     else:
         return unix_time
 
-def _read_image_file(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
+def read_image(file_name):
     """
     Read image from a local file and convert to bytes from sending
     over the MDML.
-    
+
 
     Parameters
     ----------
     file_name : string
         file name of the file to be opened
-    resize_x : int
-        horizontal size of the resized image
-    resize_y : int
-        vertical size of the resized image
-
+    
     Returns
     -------
     string
         String of bytes that can be used as the second argument in 
         experiment.publish_image()
     """
-    with open(file_name, 'rb') as open_file:
-            image_bytes = open_file.read()
-    npimg = np.fromstring(image_bytes, dtype=np.uint8)
-    source = cv2.imdecode(npimg, 1)
-    if resize_x != 0 and resize_y != 0:
-        source = cv2.resize(source, (resize_x, resize_y))
-    # img_bytes = cv2.imencode('.jpg', img_small)[1].tobytes()
-    # processed_queue.put(img_bytes)
-    _, img = cv2.imencode('.jpg', source)
-    img_bytes = img.tobytes()
+    with open(file_name, 'rb') as buf:
+        img_bytes = buf.read()
     img_b64bytes = b64encode(img_bytes)
-    img_byte_string = img_b64bytes.decode('utf-8')
-    return img_byte_string
-
-def read_any_image(file_name):
-    """
-    Read image from a local file and convert to bytes from sending
-    over the MDML.
-
-
-    Parameters
-    ----------
-    file_name : string
-        file name of the file to be opened
-    
-    Returns
-    -------
-    string
-        String of bytes that can be used as the second argument in 
-        experiment.publish_image()
-    """
-    img = mpimg.imread("/home/jelias/c/Downloads/2019-2/MLLZO_1s1pvp4i12kV_real_scan_2min_00038_00002.tif")
-
-
-def read_image(file_name, resize_x=0, resize_y=0, rescale_pixel_intensity=False):
-    """
-    Read image from a local file and convert to bytes from sending
-    over the MDML.
-
-
-    Parameters
-    ----------
-    file_name : string
-        file name of the file to be opened
-    resize_x : int
-        horizontal size of the resized image
-    resize_y : int
-        vertical size of the resized image
-    rescale_pixel_intensity : bool
-        scale the pixel intensities between 0-255 according to the min and max pixel values.
-
-    Returns
-    -------
-    string
-        String of bytes that can be used as the second argument in 
-        experiment.publish_image()
-    """
-    try:
-        source = cv2.imread(file_name)#, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH) 
-        if resize_x != 0 and resize_y != 0:
-            source = cv2.resize(source, (resize_x, resize_y))
-        if rescale_pixel_intensity:
-            source = np.nan_to_num(source)
-            min_val = np.min(source)
-            max_val = np.max(source)
-            source = (source - min_val) * (255/(max_val - min_val))
-        _, img = cv2.imencode('.png', source)
-    except:
-        print("Image could not be read by OpenCV. Trying matplotlib imread.")
-        source = mpimg.imread(file_name)
-        source = source[...,::-1]
-        if resize_x != 0 and resize_y != 0:
-            source = cv2.resize(source, (resize_x, resize_y))
-        if rescale_pixel_intensity:
-            source = np.nan_to_num(source)
-            min_val = np.min(source)
-            max_val = np.max(source)
-            source = (source - min_val) * (255/(max_val - min_val))
-        _, img = cv2.imencode('.png', source)
-    img_b64bytes = b64encode(img)
     img_byte_string = img_b64bytes.decode('utf-8')
     return img_byte_string
 
@@ -183,13 +102,13 @@ def GET_images(image_metadata, experiment_id, host, verify_cert=True):
 
     Returns
     -------
-    list
-        List of bytes, one element for each image from the metadata
+    dict
+        Dict where keys are filepaths and values are bytestrings
     """
-    imgs = []
+    imgs = {}
     for img in image_metadata:
         resp = requests.get(f"https://{host}:1880/image?path={img['filepath']}&experiment_id={experiment_id}", verify=verify_cert)
-        imgs.append(resp.content)
+        imgs[img['filepath']] = resp.content
     return imgs
 
 def query_to_pandas(device, query_result, sort=True):
