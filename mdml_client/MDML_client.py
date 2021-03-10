@@ -34,6 +34,7 @@ def on_MDML_connect(client, userdata, flags, rc):
     if rc == 5:
         print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         client.loop_stop(force=True)
+    print("\nConnected!\n")
     # print("MDML_DEBUG/"+userdata)
     # client.subscribe("MDML_DEBUG/"+userdata)
 
@@ -216,7 +217,7 @@ class experiment:
         except ConnectionRefusedError:
             print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         except:
-            print("ERROR! Could not connect to the MDML's message broker. Verify you have the correct host. Contact jelias@anl.gov if the problem persists.")
+            print("ERROR! Could not connect to the MDML's message broker. Verify you have the correct host and can reach it on port 1883.")
 
         if s3_access_key is not None:
             # Creating boto3 (s3) client connection
