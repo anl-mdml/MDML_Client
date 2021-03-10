@@ -35,8 +35,6 @@ def on_MDML_connect(client, userdata, flags, rc):
         print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         client.loop_stop(force=True)
     print("\nConnected!\n")
-    # print("MDML_DEBUG/"+userdata)
-    # client.subscribe("MDML_DEBUG/"+userdata)
 
 def unix_time(ret_int=False):
     """
