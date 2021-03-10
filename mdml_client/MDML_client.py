@@ -20,21 +20,13 @@ from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
 
 
-def print_MDML_message(client, userdata, message):
-    # self.file_queue.put(message)
-    print("******************************** MDML MESSAGE ********************************\n")
-    print("%s  :  %s" % (message.topic, message.payload.decode('utf-8')))
-    print()
-
 def on_MDML_message(client, userdata, message):
     userdata.put(message.payload.decode('utf-8'))
 
 def on_MDML_connect(client, userdata, flags, rc):
-    print("Connecting to the message broker...")
     if rc == 5:
         print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         client.loop_stop(force=True)
-    print("\nConnected!\n")
 
 def unix_time(ret_int=False):
     """
