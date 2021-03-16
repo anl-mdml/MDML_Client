@@ -28,7 +28,7 @@ def on_MDML_connect(client, userdata, flags, rc):
         print("ERROR! Broker connection was refused. This may be caused by an incorrect username or password.")
         client.loop_stop(force=True)
 
-def unix_time(ret_int=False):
+def unix_time(ret_int=True):
     """
     Get unix time and convert to nanoseconds to match the 
     time resolution of the MDML's time-series database, InfluxDB.
@@ -384,7 +384,7 @@ class experiment:
             print("Error sending config.")
             return False
 
-    def publish_vector_data(self, device_id, data, timestamp='none', data_delimiter='\t', add_device=False, tags=None):
+    def publish_vector_data(self, device_id, data, timestamp, data_delimiter='\t', add_device=False, tags=None):
         """
         Publish vector data to MDML.
 
@@ -398,7 +398,7 @@ class experiment:
             Dictionary where keys are the headers for the data device and values are
             tab delimited strings of data values. List where each element is a list 
             of values corresponding to the header name listed for that device.
-        timestamp : str
+        timestamp : int
             1 of 3 options: 
                 'none' - influxdb creates timestamp
                 'many' - different timestamp for each data point
