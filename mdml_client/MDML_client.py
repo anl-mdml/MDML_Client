@@ -369,10 +369,9 @@ class experiment:
         device_id : str
             Unique string identifying the device this data originated from.
             This should correspond with the experiment's configuration
-        data : dict or list
+        data : dict
             Dictionary where keys are the headers for the data device and values are
-            tab delimited strings of data values. List where each element is a list 
-            of values corresponding to the header name listed for that device.
+            tab delimited strings of data values.
         timestamp : int
             unix time in nanosecond (as string) - one timestamp for all data points
         data_delimiter : str
@@ -380,10 +379,11 @@ class experiment:
         add_device : bool
             True if the device should be automatically added to the experiment's configuration (default: False)
         """
-        if type(data) != dict and type(data) != list:
-            print("Error! Data parameter is not a dictionary or a list.")
+        if type(data) != dict:
+            print("Error! Data parameter is not a dictionary.")
             return
-
+        else:
+            data['timestamp'] = timestamp
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
         # Base payload
@@ -392,11 +392,11 @@ class experiment:
             'data_type': 'vector',
             'timestamp': timestamp
         }
-        payload['sys_timestamp'] = unix_time()
         # Optional parameters 
         if add_device:
             payload['add_device'] = add_device
         
+        payload['sys_timestamp'] = unix_time()
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
       
