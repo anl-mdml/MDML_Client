@@ -50,6 +50,14 @@ def unix_time(ret_int=True):
     else:
         return unix_time
 
+def random_image(width,height):
+    random_image = np.random.randint(255, size=(height,width,3), dtype=np.uint8)    
+    _, img = cv2.imencode('.png', random_image)
+    img_bytes = img.tobytes()
+    img_b64bytes = b64encode(img_bytes)
+    img_byte_string = img_b64bytes.decode('utf-8')
+    return img_byte_string
+
 def read_image(file_name):
     """
     Read image from a local file and convert to bytes from sending
