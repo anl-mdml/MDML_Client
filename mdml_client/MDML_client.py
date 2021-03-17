@@ -383,7 +383,7 @@ class experiment:
             print("Error! Data parameter is not a dictionary.")
             return
         else:
-            data['timestamp'] = timestamp
+            data['time'] = timestamp
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
         # Base payload
