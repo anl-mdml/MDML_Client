@@ -30,8 +30,7 @@ def on_MDML_connect(client, userdata, flags, rc):
 
 def unix_time(ret_int=True):
     """
-    Get unix time and convert to nanoseconds to match the 
-    time resolution of the MDML's time-series database, InfluxDB.
+    Get unix time and convert to nanoseconds
 
 
     Parameters
@@ -133,30 +132,6 @@ def query_to_pandas(device, query_result, sort=True):
     if sort:
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
-
-def query(query, experiment_id, host, verify_cert=True):
-    """
-    Query the MDML for an example of the data structure that your query will return. This is aimed at aiding in development of FuncX functions for use with the MDML.
-
-    Parameters
-    ----------
-    query : list
-        Description of the data to send funcx. See queries format in the documentation on GitHub
-    experiment_id : string
-        MDML experiment ID for which the data belongs
-    host : string
-        Host of the MDML instance
-    verify_cert : bool
-        Boolean is requests should verify the SSL cert
-    
-    Returns
-    -------
-    list
-        Data structure that will be passed to FuncX
-    """
-    import json
-    resp = requests.get(f"https://{host}:1880/query?query={json.dumps(query)}&experiment_id={experiment_id}", verify=verify_cert)
-    return json.loads(resp.text)
 
 class experiment:
     """
@@ -384,7 +359,7 @@ class experiment:
             print("Error sending config.")
             return False
 
-    def publish_vector_data(self, device_id, data, timestamp, data_delimiter='\t', add_device=False, tags=None):
+    def publish_vector(self, device_id, data, timestamp, add_device=False):
         """
         Publish vector data to MDML.
 
@@ -399,16 +374,11 @@ class experiment:
             tab delimited strings of data values. List where each element is a list 
             of values corresponding to the header name listed for that device.
         timestamp : int
-            1 of 3 options: 
-                'none' - influxdb creates timestamp
-                'many' - different timestamp for each data point
-                unix time in nanosecond (as string) - one timestamp for all data points
+            unix time in nanosecond (as string) - one timestamp for all data points
         data_delimiter : str
             String containing the delimiter of the data  (default is 'null', no delimiter)
         add_device : bool
             True if the device should be automatically added to the experiment's configuration (default: False)
-        tags : list
-            List of variable names (from data) that should be used as tags in InfluxDB (tags should have a finite set of values)
         """
         if type(data) != dict and type(data) != list:
             print("Error! Data parameter is not a dictionary or a list.")
@@ -422,22 +392,10 @@ class experiment:
             'data_type': 'vector',
             'timestamp': timestamp
         }
-        payload['data_delimiter'] = data_delimiter
-        payload['influx_measurement'] = device_id.upper()
         payload['sys_timestamp'] = unix_time()
         # Optional parameters 
         if add_device:
-            if tags is None:
-                print("Error! 'tags' parameter must be specified when using 'add_device'. "\
-                "An empty list can be defined if no tags are needed.")
-            else:
-                assert type(tags) == list
-                for tag in tags:
-                    assert tag in data.keys()
-                payload['influx_tags'] = tags
-                payload['add_device'] = add_device
-        if timestamp != 'none':
-            payload['timestamp'] = timestamp
+            payload['add_device'] = add_device
         
         # Send data via MQTT
         self.client.publish(topic, json.dumps(payload))
@@ -470,21 +428,14 @@ class experiment:
         if type(data) == dict:
             payload = {
                 'data': data,
-                # 'data': '\t'.join([str(v) for v in data.values()]),
-                # 'headers': '\t'.join([str(k) for k in data.keys()]),
                 'data_type': 'text/numeric',
-                'data_format': 'dict',
-                'data_delimiter': '\t',
-                'influx_measurement': device_id.upper()
+                'data_format': 'dict'
             }
         elif type(data) == list:
             payload = {
                 'data': data,
-                # 'data': '\t'.join([str(d) for d in data]),
                 'data_type': 'text/numeric',
-                'data_format': 'list',
-                'data_delimiter': '\t',
-                'influx_measurement': device_id.upper()
+                'data_format': 'list'
             }
         elif type(data) == str:
             if data_delimiter == '':
@@ -495,8 +446,7 @@ class experiment:
                 'data': data,
                 'data_type': 'text/numeric',
                 'data_format': 'string',
-                'data_delimiter': data_delimiter,
-                'influx_measurement': device_id.upper()
+                'data_delimiter': data_delimiter
             }
 
         # Creating MQTT topic
@@ -666,7 +616,7 @@ class experiment:
         # Publish it
         self.client.publish(topic, payload)
         
-    def publish_image(self, device_id, img_byte_string, filename = '', timestamp = 0, metadata = {}, add_device=False):
+    def publish_image(self, device_id, img_byte_string, timestamp, filename = '', metadata = {}, add_device=False):
         """
         Publish an image to MDML
 
@@ -701,17 +651,13 @@ class experiment:
         payload = {
             'filename': filename,
             'data': img_byte_string,
-            'data_type': 'image'
+            'data_type': 'image',
+            'metadata': metadata,
+            'timestamp': timestamp
         }
-        # Adding metadata if necessary
-        payload['metadata'] = metadata
-        # Adding timing code
-        if timestamp == 0:
-            timestamp = unix_time()
         # Adding other params
         if add_device:
             payload['add_device'] = add_device
-        payload['timestamp'] = timestamp
         payload = json.dumps(payload)
         # Publish it
         self.client.publish(topic, payload)
@@ -731,7 +677,7 @@ class experiment:
         Returns
         -------
         list
-            Experiment data from MDML's InfluxDB
+            Experiment data from MDML
         """
         import json
         resp = requests.get(f"https://{self.host}:1880/query?query={json.dumps(query)}&experiment_id={self.experiment_id}", verify=verify_cert)
@@ -994,8 +940,8 @@ class experiment:
                     # next_row = data[0].split('\t')
                     # next_row[0] = new_time
                     # next_row = '\t'.join(next_row)
-                    # self.publish_data(device_id, next_row, data_delimiter='\t', influxDB=True)
-                    self.publish_data(device_id, data[0], data_delimiter='\t', influxDB=True)
+                    # self.publish_data(device_id, next_row, data_delimiter='\t')
+                    self.publish_data(device_id, data[0], data_delimiter='\t')
                 elif data_type == "image":
                     img_filename = file_dir + '/' + re.split('\t', data[0])[1]
                     img_byte_string = read_image(img_filename)
