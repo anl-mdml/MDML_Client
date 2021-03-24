@@ -439,7 +439,12 @@ class experiment:
                 'data_type': 'text/numeric',
                 'data_format': 'dict'
             }
-        elif type(data) == list:
+        elif type(data) == list or type(data) == np.ndarray:
+            if type(data) == np.ndarray:
+                try:
+                    data = data.tolist()
+                except:
+                    print("Error! ndarray.tolist() failed.")
             payload = {
                 'data': data,
                 'data_type': 'text/numeric',
@@ -456,6 +461,9 @@ class experiment:
                 'data_format': 'string',
                 'data_delimiter': data_delimiter
             }
+        else:
+            print("Error! Data type not supported. Must be one of (dict, list, str, np.ndarray)")
+            return
 
         # Creating MQTT topic
         topic = "MDML/" + self.experiment_id + "/DATA/" + device_id.upper()
