@@ -18,6 +18,14 @@ import matplotlib.image as mpimg
 from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
+from uuid import uuid4
+from confluent_kafka import SerializingProducer
+from confluent_kafka import DeserializingConsumer
+from confluent_kafka.serialization import StringSerializer
+from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry.json_schema import JSONSerializer
+from confluent_kafka.schema_registry.json_schema import JSONDeserializer
+
 
 def on_MDML_message(client, userdata, message):
     userdata.put(message.payload.decode('utf-8'))
@@ -139,6 +147,129 @@ def query_to_pandas(device, query_result, sort=True):
     if sort:
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
+
+class kafka_mdml_producer:
+    """
+    Creates a serializingProducer instance for interacting with the MDML. 
+    
+    Parameters
+    ----------
+    topic : str
+        Topic to send under 
+    schema : dict or str
+        JSON schema for the message value. If dict, value is used as the 
+        schema. If string, value is used as a file path to a json file.
+    kafka_host : str
+        Host name of the kafka broker
+    kafka_port : int
+        Port used for the kafka broker
+    schema_host : str
+        Host name of the kafka schema registry
+    schema_port : int
+        Port of the kafka schema registry
+    """
+    def __init__(self, topic, schema, 
+                kafka_host="merf.egs.anl.gov", kafka_port=9092,
+                schema_host="merf.egs.anl.gov", schema_port=8081):
+        # Checking topic param
+        if type(topic) == str:
+            if topic[0:5] != "mdml-":
+                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+            else:
+                self.topic = topic
+        else:
+            raise Exception("Error, topic must be of type string.")
+        # Checking schema param
+        if type(schema) == dict:
+            self.schema = json.dumps(schema)
+        elif type(schema) == str:
+            with open(schema,"r") as f:
+                self.schema = f.read()
+        else:
+            raise Exception("Error, schema must be of type str or dict.")
+        # Create schema registry config, client, and serializer
+        schema_registry_conf = {
+            "url": f"http://{schema_host}:{schema_port}"
+        }
+        schema_registry_client = SchemaRegistryClient(schema_registry_conf)
+        json_serializer = JSONSerializer(self.schema, schema_registry_client)
+        # Create producer and its config 
+        producer_config = {
+            'bootstrap.servers': f'{kafka_host}:{kafka_port}',
+            'value.serializer': json_serializer
+        }
+        self.producer = SerializingProducer(producer_config)
+    def produce(self, data):
+        """
+        Produce data to the supplied topic 
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary of the data
+        """
+        self.producer.produce(topic = self.topic, value=data)
+        self.producer.flush()
+
+class kafka_mdml_consumer:
+    """
+    Creates a serializingProducer instance for interacting with the MDML. 
+    
+    Parameters
+    ----------
+    topic : str
+        Topic to send under 
+    group : str
+        Consumer group ID. Messages are only consumed by a given group ID
+        once.
+    kafka_host : str
+        Host name of the kafka broker
+    kafka_port : int
+        Port used for the kafka broker
+    schema_host : str
+        Host name of the kafka schema registry
+    schema_port : int
+        Port of the kafka schema registry
+    """
+    def __init__(self, topic, group, 
+                kafka_host="merf.egs.anl.gov", kafka_port=9092,
+                schema_host="merf.egs.anl.gov", schema_port=8081):
+        # Checking topic param
+        if type(topic) == str:
+            if topic[0:5] != "mdml-":
+                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+            else:
+                self.topic = topic
+        else:
+            raise Exception("Error, topic must be of type string.")
+        # Create schema registry config, client, and serializer
+        sr_config = {
+            "url": f"http://{schema_host}:{schema_port}"
+        }
+        client = SchemaRegistryClient(sr_config)
+        schema_string = client.get_latest_version(f'{topic}-value').schema.schema_str
+        json_deserializer = JSONDeserializer(schema_string)
+        
+        consumer_conf = {
+            'bootstrap.servers': f"{kafka_host}:{kafka_port}",
+            'value.deserializer': json_deserializer,
+            'group.id': group,
+            'auto.offset.reset': "earliest"
+        }
+        consumer = DeserializingConsumer(consumer_conf)
+        consumer.subscribe([topic])
+        self.consumer = consumer
+
+    def consume(self, timeout=1.0):
+        print("Ctrl+C to break consumer loop")
+        while True:
+            try:
+                msg = self.consumer.poll(timeout)
+                if msg is None:
+                    continue
+                yield msg.value()
+            except KeyboardInterrupt:
+                break
 
 class experiment:
     """
