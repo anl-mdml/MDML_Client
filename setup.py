@@ -19,7 +19,8 @@ setuptools.setup(
         "funcx",
         "paho-mqtt",
         "boto3",
-	"matplotlib"
+	"matplotlib",
+        "confluent_kafka"
     ],
     classifiers = [
         "Programming Language :: Python :: 3",
