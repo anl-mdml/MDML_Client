@@ -19,7 +19,6 @@ from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
 
-
 def on_MDML_message(client, userdata, message):
     userdata.put(message.payload.decode('utf-8'))
 
