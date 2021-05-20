@@ -19,6 +19,7 @@ from base64 import b64encode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
 from uuid import uuid4
+from confluent_kafka import Consumer
 from confluent_kafka import SerializingProducer
 from confluent_kafka import DeserializingConsumer
 from confluent_kafka.serialization import StringSerializer
@@ -217,8 +218,8 @@ class kafka_mdml_consumer:
     
     Parameters
     ----------
-    topic : str
-        Topic to send under 
+    topic : list(str)
+        Topics to consume from 
     group : str
         Consumer group ID. Messages are only consumed by a given group ID
         once.
@@ -231,34 +232,37 @@ class kafka_mdml_consumer:
     schema_port : int
         Port of the kafka schema registry
     """
-    def __init__(self, topic, group, 
+    def __init__(self, topics, group, 
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081):
+        deserializers = {}
         # Checking topic param
-        if type(topic) == str:
-            if topic[0:5] != "mdml-":
-                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+        for topic in topics:
+            if type(topic) == str:
+                if topic[0:5] != "mdml-":
+                    raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+                else:
+                    # Create schema registry config, client, and serializer
+                    sr_config = {
+                        "url": f"http://{schema_host}:{schema_port}"
+                    }
+                    client = SchemaRegistryClient(sr_config)
+                    schema_string = client.get_latest_version(f'{topic}-value').schema.schema_str
+                    json_deserializer = JSONDeserializer(schema_string)
+                    deserializers[topic] = json_deserializer
             else:
-                self.topic = topic
-        else:
-            raise Exception("Error, topic must be of type string.")
-        # Create schema registry config, client, and serializer
-        sr_config = {
-            "url": f"http://{schema_host}:{schema_port}"
-        }
-        client = SchemaRegistryClient(sr_config)
-        schema_string = client.get_latest_version(f'{topic}-value').schema.schema_str
-        json_deserializer = JSONDeserializer(schema_string)
+                raise Exception("Error, topic must be of type string.")
         
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
-            'value.deserializer': json_deserializer,
             'group.id': group,
-            'auto.offset.reset': "earliest"
+            'auto.offset.reset': 'latest',
+            'allow.auto.create.topics': True # prevents unknown topic error 
         }
-        consumer = DeserializingConsumer(consumer_conf)
-        consumer.subscribe([topic])
+        consumer = Consumer(consumer_conf)
+        consumer.subscribe(topics)
         self.consumer = consumer
+        self.deserializers = deserializers
 
     def consume(self, timeout=1.0):
         print("Ctrl+C to break consumer loop")
@@ -267,7 +271,10 @@ class kafka_mdml_consumer:
                 msg = self.consumer.poll(timeout)
                 if msg is None:
                     continue
-                yield msg.value()
+                yield {
+                    'topic': msg.topic(),
+                    'value': self.deserializers[msg.topic()](msg.value(), {})
+                }
             except KeyboardInterrupt:
                 break
 

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = "mdml_client",
-    version = "1.1.66",
+    version = "1.1.69",
     author = "Jakob Elias",
     author_email = "jelias@anl.gov",
     description = "Client to connect to the MDML",
