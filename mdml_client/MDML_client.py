@@ -21,7 +21,6 @@ from mdml_client.config import CLIENT_ID
 from uuid import uuid4
 from confluent_kafka import Consumer
 from confluent_kafka import SerializingProducer
-from confluent_kafka import DeserializingConsumer
 from confluent_kafka.serialization import StringSerializer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
@@ -235,7 +234,13 @@ class kafka_mdml_consumer:
     def __init__(self, topics, group, 
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081):
-        deserializers = {}
+        self.topics = topics
+        self.group = group
+        self.kafka_host = kafka_host
+        self.kafka_port = kafka_port
+        self.schema_host = schema_host
+        self.schema_port = schema_port
+        self.deserializers = {}
         # Checking topic param
         for topic in topics:
             if type(topic) == str:
@@ -246,23 +251,24 @@ class kafka_mdml_consumer:
                     sr_config = {
                         "url": f"http://{schema_host}:{schema_port}"
                     }
-                    client = SchemaRegistryClient(sr_config)
-                    schema_string = client.get_latest_version(f'{topic}-value').schema.schema_str
-                    json_deserializer = JSONDeserializer(schema_string)
-                    deserializers[topic] = json_deserializer
+                    self.sr_client = SchemaRegistryClient(sr_config)
+                    try:
+                        schema_string = self.sr_client.get_latest_version(f'{topic}-value').schema.schema_str
+                        self.deserializers[topic] = JSONDeserializer(schema_string)
+                    except:
+                        self.deserializers[topic] = None
             else:
                 raise Exception("Error, topic must be of type string.")
         
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
             'group.id': group,
-            'auto.offset.reset': 'latest',
-            'allow.auto.create.topics': True # prevents unknown topic error 
+            'auto.offset.reset': 'latest'
+            # 'allow.auto.create.topics': 'true' # prevents unknown topic error 
         }
         consumer = Consumer(consumer_conf)
         consumer.subscribe(topics)
         self.consumer = consumer
-        self.deserializers = deserializers
 
     def consume(self, timeout=1.0):
         print("Ctrl+C to break consumer loop")
@@ -270,7 +276,12 @@ class kafka_mdml_consumer:
             try:
                 msg = self.consumer.poll(timeout)
                 if msg is None:
-                    continue
+                    continue # no messages within timeout - poll again 
+                if self.deserializers[msg.topic()] is None and "topic not available" not in msg.value().decode('utf-8'):
+                    schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
+                    self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
+                else:
+                    continue # default message from broker the topic hasn't been created - poll again
                 yield {
                     'topic': msg.topic(),
                     'value': self.deserializers[msg.topic()](msg.value(), {})
