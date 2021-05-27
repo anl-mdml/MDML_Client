@@ -217,7 +217,7 @@ class kafka_mdml_consumer:
     
     Parameters
     ----------
-    topic : list(str)
+    topics : list(str)
         Topics to consume from 
     group : str
         Consumer group ID. Messages are only consumed by a given group ID
@@ -293,19 +293,15 @@ class kafka_mdml_consumer:
             except KeyboardInterrupt:
                 break
 
-class kafka_mdml_s3_producer:
+class kafka_mdml_s3_client:
     """
     Creates an MDML producer for sending >1MB files to an s3 location. Simultaneously, the MDML sends 
     upload information along a Kafka topic to be received by a client that can retrieve the file. 
     
     Parameters
     ----------
-
     topic : str
-        Topic to send under 
-    schema : dict or str
-        JSON schema for the message value. If dict, value is used as the 
-        schema. If string, value is used as a file path to a json file.
+        Topic to send under
     s3_endpoint : str
         Host of the S3 service
     s3_access_key : str
@@ -320,13 +316,14 @@ class kafka_mdml_s3_producer:
         Host name of the kafka schema registry
     schema_port : int
         Port of the kafka schema registry
-    schema : str
+    schema : dict or str
         Schema of the messages sent on the supplied topic. Default schema
         sends a dictionary containing the time of upload and the location 
-        for retrieval.
+        for retrieval. If dict, value is used as the schema. If string, 
+        value is used as a file path to a json file.
     """
-    def __init__(self, topic, schema, 
-                s3_endpoint="https://s3.it.anl.gov:18082", s3_access_key=None, s3_secret_key=None,
+    def __init__(self, topic, 
+                s3_endpoint=None, s3_access_key=None, s3_secret_key=None,
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081,
                 schema=None):
@@ -347,29 +344,27 @@ class kafka_mdml_s3_producer:
         self.schema_host = schema_host
         self.schema_port = schema_port
         if schema is None:
-            self.schema = """
-                {
-                    "$schema": "http://merf.egs.anl.gov/mdml-s3-notification-schema#",
-                    "title": "MDML-S3-Upload-Notification",
-                    "description": "Default S3 Upload notification",
-                    "type": "object",
-                    "properties": {
-                        "time": {
-                            "description": "Time of upload",
-                            "type": "number"
-                        },
-                        "s3_bucket": {
-                            "description": "S3 bucket the file is stored in.",
-                            "type": "string"
-                        },
-                        "s3_object_name": {
-                            "description": "Object name/key of the file within the S3 bucket.",
-                            "type": "string"
-                        }
+            self.schema = {
+                "$schema": "http://merf.egs.anl.gov/mdml-s3-notification-schema#",
+                "title": "MDML-S3-Upload-Notification",
+                "description": "Default S3 Upload notification",
+                "type": "object",
+                "properties": {
+                    "time": {
+                        "description": "Time of upload",
+                        "type": "number"
                     },
-                    "required": [ "time", "s3_bucket", "s3_object_name" ]
-                }
-            """
+                    "s3_bucket": {
+                        "description": "S3 bucket the file is stored in.",
+                        "type": "string"
+                    },
+                    "s3_object_name": {
+                        "description": "Object name/key of the file within the S3 bucket.",
+                        "type": "string"
+                    }
+                },
+                "required": [ "time", "s3_bucket", "s3_object_name" ]
+            }
         else:
             self.schema = schema 
         # Creating boto3 (s3) client connection
@@ -418,6 +413,31 @@ class kafka_mdml_s3_producer:
             's3_bucket': self.bucket,
             's3_object_name': obj_name
         })
+    def consume(self, bucket, object_name, save_filepath):
+        """
+        Gets a file from an S3 bucket. Can return the bytes of the file 
+        or save the file to a specified path.
+
+        Parameters
+        ----------
+        bucket : str
+            Name of the bucket the object is saved in
+        object_name : str
+            Name/key of the object to retrieve from the bucket
+        save_filepath : str
+            Path in which to save the downloaded file. Using a value of None
+            will return the bytes of the file instead of saving to a file
+        """
+        try:
+            resp = self.s3_client.get_object(Bucket=bucket, Key=object_name)
+        except Exception as e:
+            print("ERROR getting object!")
+            print(e)
+        if save_filepath is None:
+            return resp['Body'].read()
+        else:
+            with open(save_filepath, 'wb') as f:
+                f.write(resp['Body'].read())
 
 class experiment:
     """
