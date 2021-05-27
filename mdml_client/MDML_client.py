@@ -242,28 +242,31 @@ class kafka_mdml_consumer:
         self.schema_port = schema_port
         self.deserializers = {}
         # Checking topic param
-        for topic in topics:
-            if type(topic) == str:
-                if topic[0:5] != "mdml-":
-                    raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+        if type(topics) == list:
+            for topic in topics:
+                if type(topic) == str:
+                    if topic[0:5] != "mdml-":
+                        raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+                    else:
+                        # Create schema registry config, client, and serializer
+                        sr_config = {
+                            "url": f"http://{schema_host}:{schema_port}"
+                        }
+                        self.sr_client = SchemaRegistryClient(sr_config)
+                        try:
+                            schema_string = self.sr_client.get_latest_version(f'{topic}-value').schema.schema_str
+                            self.deserializers[topic] = JSONDeserializer(schema_string)
+                        except:
+                            self.deserializers[topic] = None
                 else:
-                    # Create schema registry config, client, and serializer
-                    sr_config = {
-                        "url": f"http://{schema_host}:{schema_port}"
-                    }
-                    self.sr_client = SchemaRegistryClient(sr_config)
-                    try:
-                        schema_string = self.sr_client.get_latest_version(f'{topic}-value').schema.schema_str
-                        self.deserializers[topic] = JSONDeserializer(schema_string)
-                    except:
-                        self.deserializers[topic] = None
-            else:
-                raise Exception("Error, topic must be of type string.")
+                    raise Exception("Error, topic must be of type string.")
+        else:
+            raise Exception("Error, topics parameter must be a list of strings.")
         
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
             'group.id': group,
-            'auto.offset.reset': 'latest'
+            'auto.offset.reset': 'earliest'
             # 'allow.auto.create.topics': 'true' # prevents unknown topic error 
         }
         consumer = Consumer(consumer_conf)
@@ -277,17 +280,144 @@ class kafka_mdml_consumer:
                 msg = self.consumer.poll(timeout)
                 if msg is None:
                     continue # no messages within timeout - poll again 
-                if self.deserializers[msg.topic()] is None and "topic not available" not in msg.value().decode('utf-8'):
-                    schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
-                    self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
-                else:
-                    continue # default message from broker the topic hasn't been created - poll again
+                if self.deserializers[msg.topic()] is None:
+                    if "topic not available" in msg.value().decode('utf-8'):
+                        continue # default message from broker the topic hasn't been created - poll again
+                    else:
+                        schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
+                        self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
                 yield {
                     'topic': msg.topic(),
                     'value': self.deserializers[msg.topic()](msg.value(), {})
                 }
             except KeyboardInterrupt:
                 break
+
+class kafka_mdml_s3_producer:
+    """
+    Creates an MDML producer for sending >1MB files to an s3 location. Simultaneously, the MDML sends 
+    upload information along a Kafka topic to be received by a client that can retrieve the file. 
+    
+    Parameters
+    ----------
+
+    topic : str
+        Topic to send under 
+    schema : dict or str
+        JSON schema for the message value. If dict, value is used as the 
+        schema. If string, value is used as a file path to a json file.
+    s3_endpoint : str
+        Host of the S3 service
+    s3_access_key : str
+        S3 access key
+    s3_secret_key : str
+        S3 secret key
+    kafka_host : str
+        Host name of the kafka broker
+    kafka_port : int
+        Port used for the kafka broker
+    schema_host : str
+        Host name of the kafka schema registry
+    schema_port : int
+        Port of the kafka schema registry
+    schema : str
+        Schema of the messages sent on the supplied topic. Default schema
+        sends a dictionary containing the time of upload and the location 
+        for retrieval.
+    """
+    def __init__(self, topic, schema, 
+                s3_endpoint="https://s3.it.anl.gov:18082", s3_access_key=None, s3_secret_key=None,
+                kafka_host="merf.egs.anl.gov", kafka_port=9092,
+                schema_host="merf.egs.anl.gov", schema_port=8081,
+                schema=None):
+        # Checking topic param
+        if type(topic) == str:
+            if topic[0:5] != "mdml-":
+                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+            else:
+                self.topic = topic
+                # Parsing topic to determine S3 save location
+                topic_parts = self.topic.split('-')
+                self.bucket = f"{topic_parts[0]}-{topic_parts[1]}"
+        else:
+            raise Exception("Error, topic must be of type string.")
+        self.schema = schema
+        self.kafka_host = kafka_host
+        self.kafka_port = kafka_port
+        self.schema_host = schema_host
+        self.schema_port = schema_port
+        if schema is None:
+            self.schema = """
+                {
+                    "$schema": "http://merf.egs.anl.gov/mdml-s3-notification-schema#",
+                    "title": "MDML-S3-Upload-Notification",
+                    "description": "Default S3 Upload notification",
+                    "type": "object",
+                    "properties": {
+                        "time": {
+                            "description": "Time of upload",
+                            "type": "number"
+                        },
+                        "s3_bucket": {
+                            "description": "S3 bucket the file is stored in.",
+                            "type": "string"
+                        },
+                        "s3_object_name": {
+                            "description": "Object name/key of the file within the S3 bucket.",
+                            "type": "string"
+                        }
+                    },
+                    "required": [ "time", "s3_bucket", "s3_object_name" ]
+                }
+            """
+        else:
+            self.schema = schema 
+        # Creating boto3 (s3) client connection
+        try:
+            session = boto3.session.Session()
+            self.s3_client = session.client(
+                service_name='s3',
+                aws_access_key_id=s3_access_key,
+                aws_secret_access_key=s3_secret_key,
+                endpoint_url=s3_endpoint
+            )
+        except Exception as e:
+            print("ERROR creating connection to the S3 endpoint!")
+            print(e)
+        # Creating Kafka producer
+        self.producer = kafka_mdml_producer(
+            topic, self.schema, 
+            self.kafka_host, self.kafka_port,
+            self.schema_host, self.schema_port
+        )
+    def produce(self, filepath, obj_name, payload=None):
+        """
+        Produce data to supplied S3 endpoint and Kafka topic 
+
+        Parameters
+        ----------
+        filepath : str
+            Path of the file to upload to the S3 bucket 
+        obj_name : str
+            Name to store the file under  
+        payload : dict
+            Payload for the message sent on the Kafka topic.
+            Only used when the default schema has been overridden.
+        """
+        # Default payload
+        if payload is None:
+            payload = {
+                'filepath': filepath,
+                'obj_name': obj_name
+            }
+        # Upload to s3
+        self.s3_client.upload_file(filepath, self.bucket, obj_name)
+        # Publish it
+        self.producer.produce({
+            'time': time.time(),
+            's3_bucket': self.bucket,
+            's3_object_name': obj_name
+        })
 
 class experiment:
     """
@@ -762,13 +892,6 @@ class experiment:
         }
         # Adding metadata if necessary
         payload['metadata'] = metadata
-        # # Check for valid filename
-        # if img_filename != '':
-        #     if re.match(r"^[\w/-]+\.[A-Za-z0-9]+$", img_filename) == None:
-        #         print("Filename not valid. Can only contains letters, numbers, and underscores.")
-        #         return
-        #     else:
-        #         payload['filename'] = img_filename
 
         # Adding timestamp
         if timestamp == 0:
