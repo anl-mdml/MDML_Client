@@ -70,7 +70,6 @@ def read_image(file_name):
     Read image from a local file and convert to bytes from sending
     over the MDML.
 
-
     Parameters
     ----------
     file_name : string
@@ -266,19 +265,21 @@ class kafka_mdml_consumer:
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
             'group.id': group,
-            'auto.offset.reset': 'earliest'
-            # 'allow.auto.create.topics': 'true' # prevents unknown topic error 
+            'auto.offset.reset': 'earliest',
+            'allow.auto.create.topics': 'true' # prevents unknown topic error 
         }
         consumer = Consumer(consumer_conf)
         consumer.subscribe(topics)
         self.consumer = consumer
 
-    def consume(self, timeout=1.0):
-        print("Ctrl+C to break consumer loop")
-        while True:
+    def consume(self, poll_timeout=1.0, overall_timeout=300.0):
+        print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+        timeout = 0.0
+        while timeout < overall_timeout:
             try:
-                msg = self.consumer.poll(timeout)
+                msg = self.consumer.poll(poll_timeout)
                 if msg is None:
+                    timeout += poll_timeout
                     continue # no messages within timeout - poll again 
                 if self.deserializers[msg.topic()] is None:
                     if "topic not available" in msg.value().decode('utf-8'):
@@ -286,6 +287,7 @@ class kafka_mdml_consumer:
                     else:
                         schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
                         self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
+                timeout = 0.0
                 yield {
                     'topic': msg.topic(),
                     'value': self.deserializers[msg.topic()](msg.value(), {})
