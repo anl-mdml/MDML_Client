@@ -1,5 +1,6 @@
 import cv2
 import json
+import math
 import numpy as np
 import pandas as pd
 import os
@@ -15,7 +16,7 @@ import boto3
 import requests
 import multiprocessing
 import matplotlib.image as mpimg
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from fair_research_login.client import NativeClient
 from mdml_client.config import CLIENT_ID
 from uuid import uuid4
@@ -147,6 +148,47 @@ def query_to_pandas(device, query_result, sort=True):
         device_data_pd = device_data_pd.sort_index(axis=1)
     return device_data_pd
 
+def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
+    """
+    Chunks a file into parts of the specified size. Yields dictionaries 
+    containing the file bytes encoded in base64. Base64 is used since
+    the kafka Producer requires a string and some files must be open in
+    byte format.    
+    
+    Parameters
+    ----------
+    fn : str
+        Path to the file 
+    chunk_size : int
+        Size of chunk to use
+    use_b64 : bool
+        True to return the file bytes as a base64 encoded string
+    encoding : string
+        Encoding to use to open the file if use_b64 is False  
+    """
+    if use_b64:
+        encoding = 'base64'
+        with open(fn, 'rb') as f:
+            file_bytes = f.read()
+        file_dat = b64encode(file_bytes).decode('utf-8')
+    else:
+        with open(fn, 'r', encoding=encoding) as f:
+            file_dat = f.read()
+    file_len = len(file_dat)
+    total_parts = math.ceil(file_len/chunk_size)
+    part = 1
+    while len(file_dat):
+        chunk_bytes = file_dat[0:chunk_size]
+        file_dat = file_dat[chunk_size:]
+        dat = {
+            'chunk': chunk_bytes,
+            'part': f'{part}.{total_parts}',
+            'filename': fn,
+            'encoding': encoding
+        }
+        part += 1
+        yield dat
+
 class kafka_mdml_producer:
     """
     Creates a serializingProducer instance for interacting with the MDML. 
@@ -199,7 +241,8 @@ class kafka_mdml_producer:
         producer_config = {
             'bootstrap.servers': f'{kafka_host}:{kafka_port}',
             'value.serializer': json_serializer,
-            'acks': acks
+            'acks': acks,
+            'max.in.flight.requests.per.connection': 1000000
         }
         self.producer = SerializingProducer(producer_config)
     def produce(self, data):
@@ -300,6 +343,63 @@ class kafka_mdml_consumer:
                     'topic': msg.topic(),
                     'value': self.deserializers[msg.topic()](msg.value(), {})
                 }
+            except KeyboardInterrupt:
+                break
+        
+    def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.'):
+        """
+        Consume messages that were chunked and save the file to disk. 
+        
+        Parameters
+        ----------
+        poll_timeout : float
+            Timeout for a message to reach the consumer 
+        overall_timeout : float
+            Time until the consumer will be shutdown if no messages 
+            are received 
+        save_file : bool
+            True if the chunked file should be saved. False will
+            return the original data contained in  
+        """
+        print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+        timeout = 0.0
+        files = {}
+        while timeout < overall_timeout:
+            try:
+                msg = self.consumer.poll(poll_timeout)
+                if msg is None:
+                    timeout += poll_timeout
+                    continue # no messages within timeout - poll again
+                if self.deserializers[msg.topic()] is None:
+                    if "topic not available" in msg.value().decode('utf-8'):
+                        continue # default message from broker the topic hasn't been created - poll again
+                    else: 
+                        schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
+                        self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
+                timeout = 0.0
+                value = self.deserializers[msg.topic()](msg.value(), {})
+                fn = value['filename']
+                part_info = value['part'].split('.')
+                if fn in files:
+                    files[fn][part_info[0]] = value['chunk']
+                else:
+                    files[fn] = {
+                        'parts': part_info[1],
+                        part_info[0]: value['chunk'] 
+                    }
+                if len(files[fn].keys()) == (int(files[fn]['parts']) + 1):
+                    dat = ''
+                    for i in range(int(files[fn]['parts'])):
+                        dat += files[fn][str(i+1)]
+                    if value['encoding'] == 'base64':
+                        dat_bytes = b64decode(dat)
+                        with open(f'{save_dir}/{os.path.basename(fn)}', 'wb') as f:
+                            f.write(dat_bytes)
+                    else:
+                        with open(f'{save_dir}/{os.path.basename(fn)}', 'w', encoding=value['encoding']) as f:
+                            f.write(dat_bytes)
+                    del files[fn]
+                    yield os.path.basename(fn)
             except KeyboardInterrupt:
                 break
 
