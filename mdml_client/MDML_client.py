@@ -208,13 +208,10 @@ class kafka_mdml_producer:
         Host name of the kafka schema registry
     schema_port : int
         Port of the kafka schema registry
-    acks : int or str
-        Ack number to configure the producer (0, 1, or 'all')
     """
     def __init__(self, topic, schema, 
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
-                schema_host="merf.egs.anl.gov", schema_port=8081,
-                acks=1):
+                schema_host="merf.egs.anl.gov", schema_port=8081):
         # Checking topic param
         if type(topic) == str:
             if topic[0:5] != "mdml-":
@@ -240,9 +237,7 @@ class kafka_mdml_producer:
         # Create producer and its config 
         producer_config = {
             'bootstrap.servers': f'{kafka_host}:{kafka_port}',
-            'value.serializer': json_serializer,
-            'acks': acks,
-            'max.in.flight.requests.per.connection': 1000000
+            'value.serializer': json_serializer
         }
         self.producer = SerializingProducer(producer_config)
     def produce(self, data):
