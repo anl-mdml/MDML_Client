@@ -189,6 +189,47 @@ def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
         part += 1
         yield dat
 
+def create_schema(d, title, descr, required_keys=None):
+    """
+    Input data object is turned into a schema for use
+    in a kafka_mdml_producer().
+    
+    Parameters
+    ----------
+    d : dict
+        Data object to translate into a schema
+    required_keys : list of str
+        List of strings of the keys that are required in the schema
+    title : str
+        Title of the schema
+    descr : str
+        Description of the schema
+    """
+    schema = {
+        "$schema": f"http://merf.egs.anl.gov/mdml-{title}-auto-schema#",
+        "title": title,
+        "description": descr,
+        "type": "object",
+        "properties": {}
+    }
+    if required_keys is not None:
+        schema['required'] = required_keys
+    keys = d.keys()
+    print(keys)
+    for key in keys:
+        dtype = type(d[key])
+        if dtype == str:
+            schema['properties'][key] = {
+                "type": "string"
+            }
+        elif dtype == float or dtype == int:
+            schema['properties'][key] = {
+                "type": "number"
+            }
+        else:
+            raise Exception(f"Data is currently using an unsupported type: {dtype}")
+    return schema
+
 class kafka_mdml_producer:
     """
     Creates a serializingProducer instance for interacting with the MDML. 
@@ -341,7 +382,7 @@ class kafka_mdml_consumer:
             except KeyboardInterrupt:
                 break
         
-    def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.'):
+    def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.', passthrough=True):
         """
         Consume messages that were chunked and save the file to disk. 
         
@@ -354,7 +395,13 @@ class kafka_mdml_consumer:
             are received 
         save_file : bool
             True if the chunked file should be saved. False will
-            return the original data contained in  
+            return the original data contained in the file
+        save_dir : str
+            Directory to save files
+        passthrough : bool
+            If multiple topics are subscribed to and one of them is 
+            not using chunking, passthrough=True will ensure those 
+            messages are still returned
         """
         print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
         timeout = 0.0
@@ -373,6 +420,12 @@ class kafka_mdml_consumer:
                         self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
                 timeout = 0.0
                 value = self.deserializers[msg.topic()](msg.value(), {})
+                if passthrough:
+                    if 'chunk' not in value:
+                        yield {
+                            'topic': msg.topic(),
+                            'value': value
+                        }
                 fn = value['filename']
                 part_info = value['part'].split('.')
                 if fn in files:
@@ -388,13 +441,20 @@ class kafka_mdml_consumer:
                         dat += files[fn][str(i+1)]
                     if value['encoding'] == 'base64':
                         dat_bytes = b64decode(dat)
-                        with open(f'{save_dir}/{os.path.basename(fn)}', 'wb') as f:
-                            f.write(dat_bytes)
+                        if save_file:
+                            with open(f'{save_dir}/{os.path.basename(fn)}', 'wb') as f:
+                                f.write(dat_bytes)
+                            ret = os.path.basename(fn)
+                        else:
+                            ret = dat_bytes
                     else:
-                        with open(f'{save_dir}/{os.path.basename(fn)}', 'w', encoding=value['encoding']) as f:
-                            f.write(dat_bytes)
+                        if save_file:
+                            with open(f'{save_dir}/{os.path.basename(fn)}', 'w', encoding=value['encoding']) as f:
+                                f.write(dat)
+                        else:
+                            ret = dat.decode(value['encoding'])                       
                     del files[fn]
-                    yield os.path.basename(fn)
+                    yield ret
             except KeyboardInterrupt:
                 break
 

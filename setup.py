@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = "mdml_client",
-    version = "1.1.84",
+    version = "1.1.88",
     author = "Jakob Elias",
     author_email = "jelias@anl.gov",
     description = "Client to connect to the MDML",
@@ -19,7 +19,7 @@ setuptools.setup(
         "funcx",
         "paho-mqtt",
         "boto3",
-	"matplotlib",
+	    "matplotlib",
         "confluent_kafka"
     ],
     classifiers = [
