@@ -1,5 +1,1 @@
-opencv-python
-paho-mqtt
-fair_research_login
-pandas
 boto3
