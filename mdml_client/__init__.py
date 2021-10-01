@@ -1,12 +1,16 @@
 from .MDML_client import *
 name = "MDML_Client"
-__version__ = "1.1.89"
+__version__ = "1.1.108"
 multipart_schema = {
     "$schema": "http://merf.egs.anl.gov/mdml-multipart-message-schema#",
     "title": "MultipartMessageSchema",
     "description": "Schema for Kafka MDML data messages that are split into multiple messages",
     "type": "object",
     "properties": {
+        "time": {
+            "description": "Sent timestamp",
+            "type": "number"
+        },
         "chunk": {
             "description": "File chunk",
             "type": "string"
@@ -24,7 +28,7 @@ multipart_schema = {
             "type": "string"
         }
     },
-    "required": [ "chunk", "part", "filename", "encoding" ]
+    "required": [ "time", "chunk", "part", "filename", "encoding" ]
 }
 stop_funcx_schema = {
     "$schema": "http://merf.egs.anl.gov/mdml-example-stop-funcx-schema#",
