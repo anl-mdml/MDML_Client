@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = "mdml_client",
-    version = "1.1.108",
+    version = "1.2.1",
     author = "Jakob Elias",
     author_email = "jelias@anl.gov",
     description = "Client to connect to the MDML",
@@ -14,13 +14,9 @@ setuptools.setup(
     url = "https://github.com/anl-mdml/MDML_Client",
     packages = setuptools.find_packages(),
     install_requires=[
-        "opencv-python",
         "pandas",
-        "funcx",
-        "paho-mqtt",
         "boto3",
-	    "matplotlib",
-        "confluent_kafka"
+	"confluent_kafka"
     ],
     classifiers = [
         "Programming Language :: Python :: 3",

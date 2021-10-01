@@ -544,7 +544,7 @@ class kafka_mdml_consumer:
             except KeyboardInterrupt:
                 break
         
-    def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.', passthrough=True):
+    def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.', passthrough=True, verbose=True):
         """
         Consume messages that were chunked and save the file to disk. 
         
@@ -565,10 +565,14 @@ class kafka_mdml_consumer:
             not using chunking, passthrough=True will ensure those 
             messages are still returned
         """
-        print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+        if verbose:
+            if overall_timeout != -1:
+                print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+            else:
+                print(f"Consumer loop will run indefinitely until a Ctrl+C")
         timeout = 0.0
         files = {}
-        while timeout < overall_timeout:
+        while timeout < overall_timeout or overall_timeout == -1:
             try:
                 msg = self.consumer.poll(poll_timeout)
                 if msg is None:
@@ -673,9 +677,12 @@ class kafka_mdml_consumer_schemaless:
 
     def consume(self, poll_timeout=1.0, overall_timeout=300.0, verbose=True):
         if verbose:
-            print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+            if overall_timeout != -1:
+                print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
+            else:
+                print(f"Consumer loop will run indefinitely until a Ctrl+C")
         timeout = 0.0
-        while timeout < overall_timeout:
+        while timeout < overall_timeout or overall_timeout == -1:
             try:
                 msg = self.consumer.poll(poll_timeout)
                 if msg is None:
