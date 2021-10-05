@@ -61,7 +61,18 @@ py_type_to_schema_type = {
     list: "array"
 }
 
-def start_experiment(id, topics):
+def print_args(a,producer_kwargs={}):
+    print(a)
+    print(producer_kwargs)
+    fake_producer("THIS_IS_THE_TOPIC", **producer_kwargs)
+
+def fake_producer(topic, host="merf.egs.anl.gov", port=9092, nothing="hello"):
+    print(topic)
+    print(host)
+    print(port)
+    print(nothing)
+
+def start_experiment(id, topics, producer_kwargs={}):
     """
     Create an experiment that writes all messages from the given topics to a new singular topic
     
@@ -100,7 +111,7 @@ def start_experiment(id, topics):
         },
         "required": [ "time", "experiment_id", "status" ]
     }
-    producer = kafka_mdml_producer("mdml-experiment-service", schema=experiment_topics_schema)
+    producer = kafka_mdml_producer("mdml-experiment-service", schema=experiment_topics_schema, **producer_kwargs)
     producer.produce({
         "time": time.time(),
         "experiment_id": id,
@@ -111,7 +122,7 @@ def start_experiment(id, topics):
     time.sleep(5)
     print("Experiment started")
 
-def stop_experiment(id):
+def stop_experiment(id, producer_kwargs={}):
     """
     Create an experiment that writes all messages from the given topics to a new singular topic
     
@@ -150,7 +161,7 @@ def stop_experiment(id):
         },
         "required": [ "time", "experiment_id", "status" ]
     }
-    producer = kafka_mdml_producer("mdml-experiment-service", schema=experiment_topics_schema)
+    producer = kafka_mdml_producer("mdml-experiment-service", schema=experiment_topics_schema, **producer_kwargs)
     producer.produce({
         "time": time.time(),
         "experiment_id": id,
@@ -159,7 +170,7 @@ def stop_experiment(id):
     producer.flush()
     print("Experiment stopped")
 
-def upload_experiment(exp_id, group, AD_SDL_TOKEN, study_id):
+def upload_experiment(exp_id, group, ADC_SDL_TOKEN, study_id, producer_kwargs={}, consumer_kwargs={}):
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-upload-urls-schema#",
         "title": "ExperimentUploadURLSchema",
@@ -189,9 +200,9 @@ def upload_experiment(exp_id, group, AD_SDL_TOKEN, study_id):
         },
         "required": [ "time", "name", "user_name", "user_email", "url" ]
     }
-    url_producer = kafka_mdml_producer("mdml-experiment-upload-urls", schema=experiment_topics_schema)
+    url_producer = kafka_mdml_producer("mdml-experiment-upload-urls", schema=experiment_topics_schema, **producer_kwargs)
     data = []
-    exp_consumer = kafka_mdml_consumer_schemaless([f"mdml-experiment-{exp_id}"], group)
+    exp_consumer = kafka_mdml_consumer_schemaless([f"mdml-experiment-{exp_id}"], group, **consumer_kwargs)
     print("Gathering experiment data for upload.")
     for msg in exp_consumer.consume(overall_timeout=5, verbose=False):
         data.append(json.loads(msg['value']))
@@ -204,11 +215,11 @@ def upload_experiment(exp_id, group, AD_SDL_TOKEN, study_id):
     # Save data messages to a JSON file
     with open(f'{exp_id}.json', 'w') as f:
         f.writelines(json.dumps(data))
-    if study_id is None or AD_SDL_TOKEN is None:
+    if study_id is None or ADC_SDL_TOKEN is None:
         Exception("cannot use method 'upload' without a study_id")
     else:
         from adc_sdk.client import ADCClient
-        client = ADCClient(AD_SDL_TOKEN)
+        client = ADCClient(ADC_SDL_TOKEN)
         with open(f'{exp_id}.json', 'rb') as f:
             sample = client.create_sample(f,study_id,f"MDML experiment {exp_id}")
             print(type(sample))
@@ -224,7 +235,7 @@ def upload_experiment(exp_id, group, AD_SDL_TOKEN, study_id):
     os.remove(f"{exp_id}.json")
     return sample
 
-def replay_experiment(id, group, replay=True, upload=False):
+def replay_experiment(id, group, replay=True, upload=False, producer_kwargs={}):
     """
     Create an experiment that writes all messages from the given topics to a new singular topic
     
@@ -272,7 +283,7 @@ def replay_experiment(id, group, replay=True, upload=False):
         },
         "required": [ "time", "experiment_id", "group", "replay", "upload" ]
     }
-    producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema)
+    producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema, **producer_kwargs)
     producer.produce({
         "time": time.time(),
         "experiment_id": id,
