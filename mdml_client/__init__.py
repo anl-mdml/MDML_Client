@@ -1,6 +1,6 @@
 from .MDML_client import *
 name = "MDML_Client"
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 multipart_schema = {
     "$schema": "http://merf.egs.anl.gov/mdml-multipart-message-schema#",
     "title": "MultipartMessageSchema",

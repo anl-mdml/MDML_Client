@@ -11,7 +11,6 @@ from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 
-
 def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
     """
     Chunks a file into parts of the specified size. Yields dictionaries 
@@ -60,17 +59,6 @@ py_type_to_schema_type = {
     int: "number",
     list: "array"
 }
-
-def print_args(a,producer_kwargs={}):
-    print(a)
-    print(producer_kwargs)
-    fake_producer("THIS_IS_THE_TOPIC", **producer_kwargs)
-
-def fake_producer(topic, host="merf.egs.anl.gov", port=9092, nothing="hello"):
-    print(topic)
-    print(host)
-    print(port)
-    print(nothing)
 
 def start_experiment(id, topics, producer_kwargs={}):
     """
@@ -235,7 +223,7 @@ def upload_experiment(exp_id, group, ADC_SDL_TOKEN, study_id, producer_kwargs={}
     os.remove(f"{exp_id}.json")
     return sample
 
-def replay_experiment(id, group, replay=True, upload=False, producer_kwargs={}):
+def replay_experiment(adc_sample_id, producer_kwargs={}):
     """
     Create an experiment that writes all messages from the given topics to a new singular topic
     
@@ -247,8 +235,8 @@ def replay_experiment(id, group, replay=True, upload=False, producer_kwargs={}):
         group to use when consuming the main experiment topic
     replay : bool
         Replay the experiment
-    upload : bool
-        Upload to the SDL data cloud
+    producer_kwargs : dict
+        Dictionary of kwargs for this functions internal producer
     """
     experiment_replay_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-replay-schema#",
@@ -260,36 +248,17 @@ def replay_experiment(id, group, replay=True, upload=False, producer_kwargs={}):
                 "description": "Sent timestamp",
                 "type": "number"
             },
-            "experiment_id": {
-                "description": "A unique experiment ID",
-                "type": "string"
-            },
-            "group": {
-                "description": "Group ID for the main experiment topic",
-                "type": "string"
-            },
-            "replay": {
-                "description": "Replay experiment",
-                "type": "bool"
-            },
-            "upload": {
-                "description": "Upload experiment file to SDL data cloud",
-                "type": "bool"
-            },
-            "study_id": {
-                "description": "Study ID for the data cloud",
+            "adc_sample_id": {
+                "description": "Argonne Data Cloud sample ID",
                 "type": "string"
             }
         },
-        "required": [ "time", "experiment_id", "group", "replay", "upload" ]
+        "required": [ "time", "adc_sample_id" ]
     }
     producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema, **producer_kwargs)
     producer.produce({
         "time": time.time(),
-        "experiment_id": id,
-        "group": group,
-        "replay": replay,
-        "upload": upload,
+        "adc_sample_id": adc_sample_id
     })
     producer.flush()
 
