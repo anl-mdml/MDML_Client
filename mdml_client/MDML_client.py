@@ -11,7 +11,7 @@ from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 
-def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
+def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8', file_id=None):
     """
     Chunks a file into parts of the specified size. Yields dictionaries 
     containing the file bytes encoded in base64. Base64 is used since
@@ -28,6 +28,8 @@ def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
         True to return the file bytes as a base64 encoded string
     encoding : string
         Encoding to use to open the file if use_b64 is False  
+    file_id : string
+        File ID to use in the chunking process if the fn param is not suitable  
     """
     if use_b64:
         encoding = 'base64'
@@ -50,6 +52,8 @@ def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8'):
             'filename': fn,
             'encoding': encoding
         }
+        if file_id is not None:
+            dat['filename'] = file_id
         part += 1
         yield dat
 
@@ -57,7 +61,8 @@ py_type_to_schema_type = {
     str: "string",
     float: "number",
     int: "number",
-    list: "array"
+    list: "array",
+    dict: "object",
 }
 
 def start_experiment(id, topics, producer_kwargs={}):
@@ -278,6 +283,32 @@ def create_schema(d, title, descr, required_keys=None):
     required_keys : list of str
         List of strings of the keys that are required in the schema
     """
+    def get_property(key, dat, prop={}):
+        try:
+            dtype = py_type_to_schema_type[type(dat)]
+        except:
+            raise Exception("Unhandled type exception")
+        if dtype == "array":
+            item_type = py_type_to_schema_type[type(dat[key][0])]
+            return {
+                "type": "array",
+                "items": {
+                    "type": item_type
+                }
+            }
+        elif dtype == "object":
+            props = {}
+            for k in dat:
+                props[k] = get_property(k, dat[k])
+            return {
+                "type": "object",
+                "properties": props
+            }
+        else:
+            dtype = py_type_to_schema_type[type(dat)]
+            return {
+                "type": dtype
+            }
     schema = {
         "$schema": f"http://merf.egs.anl.gov/mdml-{title}-auto-schema#",
         "title": title,
@@ -288,22 +319,27 @@ def create_schema(d, title, descr, required_keys=None):
     if required_keys is not None:
         schema['required'] = required_keys
     for key in d.keys():
-        try:
-            dtype = py_type_to_schema_type[type(d[key])]
-        except:
-            raise Exception("Unhandled type exception")
-        if dtype == "array":
-            item_type = py_type_to_schema_type[type(d[key][0])]
-            schema['properties'][key] = {
-                "type": "array",
-                "items": {
-                    "type": item_type
-                }
-            }
-        else:
-            schema['properties'][key] = {
-                "type": dtype
-            }
+        schema['properties'][key] = get_property(key, d[key])
+        # if dtype == "array":
+        #     item_type = py_type_to_schema_type[type(d[key][0])]
+        #     schema['properties'][key] = {
+        #         "type": "array",
+        #         "items": {
+        #             "type": item_type
+        #         }
+        #     }
+        # if dtype == "object":
+        #     item_type = py_type_to_schema_type[type(d[key][0])]
+        #     schema['properties'][key] = {
+        #         "type": "array",
+        #         "items": {
+        #             "type": item_type
+        #         }
+        #     }
+        # else:
+        #     schema['properties'][key] = {
+        #         "type": dtype
+        #     }
     return schema
 
 class kafka_mdml_producer_schemaless:
@@ -314,12 +350,14 @@ class kafka_mdml_producer_schemaless:
     ----------
     topic : str
         Topic to send under
+    config: dict
+        Confluent Kafka client config
     kafka_host : str
         Host name of the kafka broker
     kafka_port : int
         Port used for the Kafka broker
     """
-    def __init__(self, topic, kafka_host="merf.egs.anl.gov", kafka_port=9092):
+    def __init__(self, topic, config=None, kafka_host="merf.egs.anl.gov", kafka_port=9092):
         # Checking topic param
         if type(topic) == str:
             if topic[0:5] != "mdml-":
@@ -329,9 +367,13 @@ class kafka_mdml_producer_schemaless:
         else:
             raise Exception("Error, topic must be of type string.")
         # Create producer and its config 
-        producer_config = {
-            'bootstrap.servers': f'{kafka_host}:{kafka_port}'
-        }
+        # Create producer and its config 
+        if config is None:
+            producer_config = {
+                'bootstrap.servers': f'{kafka_host}:{kafka_port}'
+            }
+        else:
+            producer_config = config
         self.producer = Producer(producer_config)
     def produce(self, data, key=None, partition=None):
         """
@@ -363,6 +405,8 @@ class kafka_mdml_producer:
     schema : dict or str
         JSON schema for the message value. If dict, value is used as the 
         schema. If string, value is used as a file path to a json file.
+    config : dict
+        Confluent Kafka client config
     kafka_host : str
         Host name of the kafka broker
     kafka_port : int
@@ -372,7 +416,7 @@ class kafka_mdml_producer:
     schema_port : int
         Port of the kafka schema registry
     """
-    def __init__(self, topic, schema=None, 
+    def __init__(self, topic, schema=None, config=None,
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081):
         # Checking topic param
@@ -407,10 +451,13 @@ class kafka_mdml_producer:
                 raise Exception("Error, schema must be of type str or dict.")
         json_serializer = JSONSerializer(self.schema, schema_registry_client)
         # Create producer and its config 
-        producer_config = {
-            'bootstrap.servers': f'{kafka_host}:{kafka_port}',
-            'value.serializer': json_serializer
-        }
+        if config is None:
+            producer_config = {
+                'bootstrap.servers': f'{kafka_host}:{kafka_port}',
+                'value.serializer': json_serializer
+            }
+        else:
+            producer_config = config
         self.producer = SerializingProducer(producer_config)
     def produce(self, data, key=None, partition=None):
         """
