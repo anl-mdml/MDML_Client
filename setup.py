@@ -5,20 +5,20 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name = "mdml_client",
-    version = "1.1.54",
+    version = "1.2.14",
     author = "Jakob Elias",
     author_email = "jelias@anl.gov",
     description = "Client to connect to the MDML",
     long_description = long_description,
     long_description_content_type = "text/markdown",
-    url = "https://github.com/jelias1/MDML_Client",
+    url = "https://github.com/anl-mdml/MDML_Client",
     packages = setuptools.find_packages(),
     install_requires=[
-        "opencv-python",
         "pandas",
-        "funcx",
-        "paho-mqtt",
-        "boto3"
+        "boto3",
+	    "confluent_kafka",
+	    "requests",
+        "jsonschema"
     ],
     classifiers = [
         "Programming Language :: Python :: 3",
