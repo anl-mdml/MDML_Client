@@ -3,9 +3,11 @@ import math
 import os
 import time
 import boto3
+import requests
 from base64 import b64encode, b64decode
 from confluent_kafka import Consumer, Producer, TopicPartition
 from confluent_kafka import SerializingProducer
+from confluent_kafka.admin import NewTopic, AdminClient
 from confluent_kafka.serialization import StringSerializer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
@@ -163,7 +165,7 @@ def stop_experiment(id, producer_kwargs={}):
     producer.flush()
     print("Experiment stopped")
 
-def upload_experiment(exp_id, group, ADC_SDL_TOKEN, study_id, producer_kwargs={}, consumer_kwargs={}):
+def upload_experiment_to_ADC(exp_id, group, ADC_SDL_TOKEN, study_id, producer_kwargs={}, consumer_kwargs={}):
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-upload-urls-schema#",
         "title": "ExperimentUploadURLSchema",
@@ -228,24 +230,93 @@ def upload_experiment(exp_id, group, ADC_SDL_TOKEN, study_id, producer_kwargs={}
     os.remove(f"{exp_id}.json")
     return sample
 
-def replay_experiment(adc_sample_id, producer_kwargs={}):
+def get_experiment_data(exp_id, ADC_TOKEN):
     """
-    Create an experiment that writes all messages from the given topics to a new singular topic
+    Return the data streamed during an experiment
+    
+    Parameters
+    ----------
+    exp_id : str
+        Experiment ID
+    ADC_TOKEN : str
+        ADC SDK access token
+
+    Return
+    ------
+    (url, data) : (str, list(dict))
+        Tuple containing the ADC URL to the sample and a list 
+        containing the data messsages streamed during the experiment
+    """
+    from adc_sdk.client import ADCClient
+    MDML_STUDY_ID = "U3R1ZHlOb2RlOjMx" # ADC ID for MDML experiments Study
+    client = ADCClient(ADC_TOKEN)
+    study = client.get_study(MDML_STUDY_ID)
+    exp_sample = None
+    exp_url = None
+    for sample in study['study']['samples']['edges']:
+        # print(sample)
+        if sample['node']['name'] == f"MDML experiment {exp_id}":
+            exp_sample = sample
+            exp_url = exp_sample['node']['url']
+    if exp_sample is None:
+        raise Exception("No experiment found with that ID.")
+    resp = requests.get(exp_sample['node']['url'], verify=False)
+    return (exp_url, resp.json())
+
+# def replay_ADC_experiment(adc_sample_id, producer_kwargs={}):
+#     """
+    
+#     Parameters
+#     ==========
+#     id : str
+#         Unique ID of the experiment to replay
+#     group : str
+#         group to use when consuming the main experiment topic
+#     replay : bool
+#         Replay the experiment
+#     producer_kwargs : dict
+#         Dictionary of kwargs for this functions internal producer
+#     """
+#     experiment_replay_schema = {
+#         "$schema": "http://merf.egs.anl.gov/mdml-experiment-replay-schema#",
+#         "title": "ExperimentReplaySchema",
+#         "description": "Schema for Kafka MDML Experiment Replays",
+#         "type": "object",
+#         "properties": {
+#             "time": {
+#                 "description": "Sent timestamp",
+#                 "type": "number"
+#             },
+#             "adc_sample_id": {
+#                 "description": "Argonne Data Cloud sample ID",
+#                 "type": "string"
+#             }
+#         },
+#         "required": [ "time", "adc_sample_id" ]
+#     }
+#     producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema, **producer_kwargs)
+#     producer.produce({
+#         "time": time.time(),
+#         "adc_sample_id": adc_sample_id
+#     })
+#     producer.flush()
+
+def replay_experiment(experiment_id, speed=1, producer_kwargs={}):
+    """
+    Replay an experiment - streams data back down their original topics
     
     Parameters
     ==========
-    id : str
+    experiment_id : str
         Unique ID of the experiment to replay
-    group : str
-        group to use when consuming the main experiment topic
-    replay : bool
-        Replay the experiment
+    speed : int
+        Speed multiplier used during the replay
     producer_kwargs : dict
         Dictionary of kwargs for this functions internal producer
     """
     experiment_replay_schema = {
-        "$schema": "http://merf.egs.anl.gov/mdml-experiment-replay-schema#",
-        "title": "ExperimentReplaySchema",
+        "$schema": "http://merf.egs.anl.gov/mdml-replay-service-schema#",
+        "title": "ExperimentReplayServiceSchema",
         "description": "Schema for Kafka MDML Experiment Replays",
         "type": "object",
         "properties": {
@@ -253,21 +324,26 @@ def replay_experiment(adc_sample_id, producer_kwargs={}):
                 "description": "Sent timestamp",
                 "type": "number"
             },
-            "adc_sample_id": {
+            "experiment_id": {
                 "description": "Argonne Data Cloud sample ID",
                 "type": "string"
+            },
+            "speed": {
+                "description": "Speed to replay at",
+                "type": "number"
             }
         },
-        "required": [ "time", "adc_sample_id" ]
+        "required": [ "time", "experiment_id", "speed" ]
     }
-    producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema, **producer_kwargs)
+    producer = kafka_mdml_producer("mdml-replay-service", schema=experiment_replay_schema, **producer_kwargs)
     producer.produce({
         "time": time.time(),
-        "adc_sample_id": adc_sample_id
+        "experiment_id": experiment_id,
+        "speed": speed
     })
     producer.flush()
 
-def create_schema(d, title, descr, required_keys=None):
+def create_schema(d, title, descr, required_keys=None, add_time=False):
     """
     Input data object is turned into a schema for use
     in a kafka_mdml_producer().
@@ -318,6 +394,8 @@ def create_schema(d, title, descr, required_keys=None):
     }
     if required_keys is not None:
         schema['required'] = required_keys
+    if add_time:
+        d['mdml_time'] = time.time()
     for key in d.keys():
         schema['properties'][key] = get_property(key, d[key])
         # if dtype == "array":
@@ -357,7 +435,8 @@ class kafka_mdml_producer_schemaless:
     kafka_port : int
         Port used for the Kafka broker
     """
-    def __init__(self, topic, config=None, kafka_host="merf.egs.anl.gov", kafka_port=9092):
+    def __init__(self, topic, config=None,
+                kafka_host="merf.egs.anl.gov", kafka_port=9092):
         # Checking topic param
         if type(topic) == str:
             if topic[0:5] != "mdml-":
@@ -416,7 +495,7 @@ class kafka_mdml_producer:
     schema_port : int
         Port of the kafka schema registry
     """
-    def __init__(self, topic, schema=None, config=None,
+    def __init__(self, topic, schema=None, config=None, add_time=True,
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081):
         # Checking topic param
@@ -458,6 +537,7 @@ class kafka_mdml_producer:
             }
         else:
             producer_config = config
+        self.add_time = add_time
         self.producer = SerializingProducer(producer_config)
     def produce(self, data, key=None, partition=None):
         """
@@ -472,6 +552,8 @@ class kafka_mdml_producer:
         partition : int
             Number of the partition to assign the message to
         """
+        if self.add_time:
+            data['mdml_time'] = time.time()
         if partition is None:
             self.producer.produce(topic=self.topic, value=data, key=key)
         else:
@@ -493,6 +575,12 @@ class kafka_mdml_consumer:
     group : str
         Consumer group ID. Messages are only consumed by a given group ID
         once.
+    auto_offset_reset : str
+        'earliest' or 'latest'. 'earliest' is the default and will start consuming
+        messages from where the consumer group left off. 'latest' will start
+        consuming messages from the time that the consumer is started. 
+    show_mdml_time : bool
+        Indicator to show the mdml_time field of a message 
     kafka_host : str
         Host name of the kafka broker
     kafka_port : int
@@ -503,6 +591,7 @@ class kafka_mdml_consumer:
         Port of the kafka schema registry
     """
     def __init__(self, topics, group, auto_offset_reset="earliest",
+                show_mdml_time=True,
                 kafka_host="merf.egs.anl.gov", kafka_port=9092,
                 schema_host="merf.egs.anl.gov", schema_port=8081):
         self.topics = topics
@@ -533,7 +622,21 @@ class kafka_mdml_consumer:
                     raise Exception("Error, topic must be of type string.")
         else:
             raise Exception("Error, topics parameter must be a list of strings.")
-        
+        # Topic creation is needed
+        AC = AdminClient({'bootstrap.servers': self.kafka_host})
+        for topic in topics:
+            res = AC.create_topics([NewTopic(topic, 10)])
+            res = res[topic]
+            if res.exception() is None:
+                print("Topic created since it did not exist yet.")
+                continue
+            else:
+                reason = res.exception().args[0].name()
+                if reason == "TOPIC_ALREADY_EXISTS":
+                    continue
+                else:
+                    print(f"ERROR creating topic {reason}") 
+        # .exception().args[0].name()
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
             'group.id': group,
@@ -543,6 +646,7 @@ class kafka_mdml_consumer:
         consumer = Consumer(consumer_conf)
         consumer.subscribe(topics)
         self.consumer = consumer
+        self.show_mdml_time = show_mdml_time
 
     def consume(self, poll_timeout=1.0, overall_timeout=300.0, verbose=True):
         if verbose:
@@ -564,9 +668,13 @@ class kafka_mdml_consumer:
                         schema_string = self.sr_client.get_latest_version(f'{msg.topic()}-value').schema.schema_str
                         self.deserializers[msg.topic()] = JSONDeserializer(schema_string)
                 timeout = 0.0
+                val = self.deserializers[msg.topic()](msg.value(), {})
+                if not self.show_mdml_time:
+                    if 'mdml_time' in val:
+                        del val['mdml_time']
                 yield {
                     'topic': msg.topic(),
-                    'value': self.deserializers[msg.topic()](msg.value(), {})
+                    'value': val
                 }
             except KeyboardInterrupt:
                 break
@@ -615,10 +723,13 @@ class kafka_mdml_consumer:
                 value = self.deserializers[msg.topic()](msg.value(), {})
                 if passthrough:
                     if 'chunk' not in value:
-                        yield {
-                            'topic': msg.topic(),
-                            'value': value
-                        }
+                        if self.show_mdml_time:
+                            if 'mdml_time' in value:
+                                del value['mdml_time']
+                            yield {
+                                'topic': msg.topic(),
+                                'value': value
+                            }
                 fn = value['filename']
                 part_info = value['part'].split('.')
                 if fn in files:
@@ -691,7 +802,21 @@ class kafka_mdml_consumer_schemaless:
                     raise Exception("Error, topic must be of type string.")
         else:
             raise Exception("Error, topics parameter must be a list of strings.")
-        
+        # Topic creation is needed
+        AC = AdminClient({'bootstrap.servers': self.kafka_host})
+        for topic in topics:
+            res = AC.create_topics([NewTopic(topic, 10)])
+            res = res[topic]
+            if res.exception() is None:
+                print("Topic created since it did not exist yet.")
+                continue
+            else:
+                reason = res.exception().args[0].name()
+                if reason == "TOPIC_ALREADY_EXISTS":
+                    continue
+                else:
+                    print(f"ERROR creating topic {reason}") 
+
         consumer_conf = {
             'bootstrap.servers': f"{kafka_host}:{kafka_port}",
             'group.id': group,
