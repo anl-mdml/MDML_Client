@@ -3,13 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to MDML Python Client's documentation!
+MDML Python Client documentation
 ==============================================
-This client connects users to the Manufacturing Data and Machine Learning Layer at
+This client connects users to the Manufacturing Data and Machine Learning Platform at
 Argonne National Laboratory.
 
 .. toctree::
-   :maxdepth: 2
    
    client
 
