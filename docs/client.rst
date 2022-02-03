@@ -2,7 +2,6 @@ MDML Python Client
 ==================
 
 .. autofunction:: mdml_client.start_experiment
-   :members:
 
 
 Helper Functions
