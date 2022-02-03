@@ -9,7 +9,8 @@ This client connects users to the Manufacturing Data and Machine Learning Layer 
 Argonne National Laboratory.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
+   
    client
 
 
