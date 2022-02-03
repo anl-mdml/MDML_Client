@@ -1,10 +1,7 @@
 MDML Python Client
 ==================
 
-Experiment Class
-----------------
-
-.. autoclass:: mdml_client.experiment
+.. autofunction:: mdml_client.start_experiment
    :members:
 
 
