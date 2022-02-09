@@ -1,7 +1,7 @@
 MDML Python Client
 ==================
 
-.. autoclass:: mdml_client.experiment
+.. autoclass:: mdml_client.kafka_mdml_consumer
    :members:
    
    
