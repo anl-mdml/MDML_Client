@@ -753,7 +753,8 @@ class kafka_mdml_consumer:
         dict 
             If passthrough=True is used and a message from a topic without
             chunking is received, a dictionary containing the topic and
-            value of the message will be yielded. 
+            value of the message will be yielded. Otherwise, a tuple is 
+            returned
 
         """
         if verbose:
