@@ -84,6 +84,9 @@ def start_experiment(id, topics, producer_kwargs={}):
         Unique ID for the experiment
     topics : list(str)
         Topics to consume from that make up the experiment
+    producer_kwargs : dict
+        Dictionary that is passed as kwargs to the underlying producer in this function.
+        Parameter names should be the same as those in a kafka_mdml_producer. 
     """
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-service-schema#",
@@ -136,7 +139,8 @@ def stop_experiment(id, producer_kwargs={}):
     id : str
         Unique ID for the experiment
     producer_kwargs : dict
-        Dictionary that is passed as kwargs to the underlying producer in this function
+        Dictionary that is passed as kwargs to the underlying producer in this function.
+        Parameter names should be the same as those in a kafka_mdml_producer.
     """
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-service-schema#",
