@@ -20,6 +20,7 @@ Schema-less Producer and Consumer classes
    :members:
 
 MDML S3 Client for "coat-checking" large files
+
 .. autoclass:: mdml_client.kafka_mdml_s3_client
    :members:
    
