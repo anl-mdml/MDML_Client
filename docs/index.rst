@@ -10,7 +10,6 @@ Argonne National Laboratory.
 
 .. toctree::
    
-   client
    producer
    consumer
    schemaless
