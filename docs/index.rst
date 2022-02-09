@@ -11,7 +11,11 @@ Argonne National Laboratory.
 .. toctree::
    
    client
-
+   producer
+   consumer
+   schemaless
+   services
+   helpers
 
 Indices and tables
 ==================
