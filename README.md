@@ -8,7 +8,9 @@ Create a client to easily access the features of the Manufacturing Data & Machin
     pip install mdml_client
 ```
 
-## Basic Usage
+## Documentation
+
+Check out our [Read the Docs](https://mdml-client.readthedocs.io/en/latest/index.html#)
 
 There is a Jupyter Notebook within the tutorial folder that demonstrates basic usage of the MDML client. There are two main components to the client: a producer class and a consumer class.
 

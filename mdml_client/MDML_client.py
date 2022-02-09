@@ -13,11 +13,19 @@ from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.json_schema import JSONSerializer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
 
+py_type_to_schema_type = {
+    str: "string",
+    float: "number",
+    int: "number",
+    list: "array",
+    dict: "object",
+}
+
 def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8', file_id=None):
     """
-    Chunks a file into parts of the specified size. Yields dictionaries 
+    Chunks a file into parts. Yields dictionaries 
     containing the file bytes encoded in base64. Base64 is used since
-    the kafka Producer requires a string and some files must be open in
+    the kafka Producer requires a string and some files must be opened in
     byte format.    
     
     Parameters
@@ -31,7 +39,12 @@ def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8', file_id=None):
     encoding : string
         Encoding to use to open the file if use_b64 is False  
     file_id : string
-        File ID to use in the chunking process if the fn param is not suitable  
+        File ID to use in the chunking process if the fn param is not suitable 
+ 
+    Yields
+    ------
+    Dictionary containing a chunk of data and metadata information
+    required to piece all of the chunks back together.
     """
     if use_b64:
         encoding = 'base64'
@@ -59,24 +72,18 @@ def chunk_file(fn, chunk_size, use_b64=True, encoding='utf-8', file_id=None):
         part += 1
         yield dat
 
-py_type_to_schema_type = {
-    str: "string",
-    float: "number",
-    int: "number",
-    list: "array",
-    dict: "object",
-}
-
 def start_experiment(id, topics, producer_kwargs={}):
     """
-    Create an experiment that writes all messages from the given topics to a new singular topic
+    Start an experiment with the MDML Experiment service.
+    Messages produced on all of the specified topics will be saved
+    to a file and upload to S3. 
     
     Parameters
-    ==========
+    ----------
     id : str
         Unique ID for the experiment
     topics : list(str)
-        Topics to consume from
+        Topics to consume from that make up the experiment
     """
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-service-schema#",
@@ -119,14 +126,17 @@ def start_experiment(id, topics, producer_kwargs={}):
 
 def stop_experiment(id, producer_kwargs={}):
     """
-    Create an experiment that writes all messages from the given topics to a new singular topic
+    Stop a previously started experiment. Upon stopping, the experiment service
+    will package all data streamed during an experiment, verify all data is
+    present, and write a file to S3.
     
     Parameters
-    ==========
+    ----------
+
     id : str
         Unique ID for the experiment
-    topics : list(str)
-        Topics to consume from
+    producer_kwargs : dict
+        Dictionary that is passed as kwargs to the underlying producer in this function
     """
     experiment_topics_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-experiment-service-schema#",
@@ -303,10 +313,11 @@ def get_experiment_data(exp_id, ADC_TOKEN):
 
 def replay_experiment(experiment_id, speed=1, producer_kwargs={}):
     """
-    Replay an experiment - streams data back down their original topics
+    Replay an experiment - stream data back down their original topics
     
     Parameters
-    ==========
+    ----------
+
     experiment_id : str
         Unique ID of the experiment to replay
     speed : int
@@ -345,8 +356,9 @@ def replay_experiment(experiment_id, speed=1, producer_kwargs={}):
 
 def create_schema(d, title, descr, required_keys=None, add_time=False):
     """
-    Input data object is turned into a schema for use
-    in a kafka_mdml_producer().
+    Create a schema for use in a kafka_mdml_producer object.
+    An example of the data object that will be produced is needed
+    to create the schema.
     
     Parameters
     ----------
@@ -358,6 +370,11 @@ def create_schema(d, title, descr, required_keys=None, add_time=False):
         Description of the schema
     required_keys : list of str
         List of strings of the keys that are required in the schema
+
+    Returns
+    -------
+    Schema dictionary compatible with kafka_mdml_producer
+
     """
     def get_property(key, dat, prop={}):
         try:
@@ -422,7 +439,7 @@ def create_schema(d, title, descr, required_keys=None, add_time=False):
 
 class kafka_mdml_producer_schemaless:
     """
-    Creates a Producer instance for interacting with the MDML
+    Creates a schemaless Producer instance for interacting with the MDML.
 
     Parameters
     ----------
@@ -456,12 +473,16 @@ class kafka_mdml_producer_schemaless:
         self.producer = Producer(producer_config)
     def produce(self, data, key=None, partition=None):
         """
-        Produce data to the supplied topic 
+        Produce data to the supplied topic
 
         Parameters
         ----------
         data : dict
             Dictionary of the data
+        key : string
+            Key of the message (used in determining a partition) - not required
+        partition : int
+            Partition used to save the message - not required
         """
         if partition is None:
             self.producer.produce(topic=self.topic, value=data, key=key)
@@ -475,7 +496,7 @@ class kafka_mdml_producer_schemaless:
 
 class kafka_mdml_producer:
     """
-    Creates a serializingProducer instance for interacting with the MDML. 
+    Creates a producer instance for producing data to an MDML instance. 
     
     Parameters
     ----------
@@ -566,7 +587,7 @@ class kafka_mdml_producer:
 
 class kafka_mdml_consumer:
     """
-    Creates a serializingProducer instance for interacting with the MDML. 
+    Creates a consumer to consume messages from an MDML instance. 
     
     Parameters
     ----------
@@ -649,6 +670,25 @@ class kafka_mdml_consumer:
         self.show_mdml_time = show_mdml_time
 
     def consume(self, poll_timeout=1.0, overall_timeout=300.0, verbose=True):
+        """
+        Start consuming from the specified topic
+
+        Parameters
+        ----------
+
+        poll_timeout : float
+            Timeout to wait when consuming one message
+        overall_timeout : float
+            Timeout to wait until the consume generator is closed down.
+            This timeout is restarted every time a new message is received
+        verbose : bool
+            Print a message with notes when the consume loop starts
+
+        Yields
+        ------
+
+        A dictionary containing the topic and value of a single message  
+        """
         if verbose:
             if overall_timeout != -1:
                 print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
@@ -681,12 +721,13 @@ class kafka_mdml_consumer:
         
     def consume_chunks(self, poll_timeout=1.0, overall_timeout=300.0, save_file=True, save_dir='.', passthrough=True, verbose=True):
         """
-        Consume messages that were chunked and save the file to disk. 
+        Consume messages from a topic that contains chunked messages.
+        The original file is saved to disk by default. 
         
         Parameters
         ----------
         poll_timeout : float
-            Timeout for a message to reach the consumer 
+            Timeout for one message to reach the consumer 
         overall_timeout : float
             Time until the consumer will be shutdown if no messages 
             are received 
@@ -698,7 +739,21 @@ class kafka_mdml_consumer:
         passthrough : bool
             If multiple topics are subscribed to and one of them is 
             not using chunking, passthrough=True will ensure those 
-            messages are still returned
+            messages are still yielded by the generator
+        verbose : bool
+            Print details regarding the consumer on start
+
+        Yields
+        ------
+
+        A tuple containing (timestamp, data) where timestamp is the 
+        time the first chunk of the message was sent and where data 
+        is either a filepath (save_file=True) or the bytes of the 
+        file that was chunked and streamed (save_file=False). If 
+        passthrough=True is used and a message from a topic without
+        chunking is received, a dictionary containing the topic and
+        value of the message will be yielded. 
+
         """
         if verbose:
             if overall_timeout != -1:
@@ -766,7 +821,8 @@ class kafka_mdml_consumer:
                 break
     def close(self):
         """
-        Closes a consumer.
+        Closes down the consumer. Ensures that received 
+        messages have been acknowledged by Kafka.
         """
         self.consumer.close()
 
@@ -785,6 +841,7 @@ class kafka_mdml_consumer_schemaless:
         Host name of the kafka broker
     kafka_port : int
         Port used for the kafka broker
+
     """
     def __init__(self, topics, group, 
                 kafka_host="merf.egs.anl.gov", kafka_port=9092):
@@ -828,6 +885,12 @@ class kafka_mdml_consumer_schemaless:
         self.consumer = consumer
 
     def consume(self, poll_timeout=1.0, overall_timeout=300.0, verbose=True):
+        """
+        Yields
+        ------
+
+        A dictionary containing the topic and value of a single message 
+        """
         if verbose:
             if overall_timeout != -1:
                 print(f"Consumer loop will exit after {overall_timeout} seconds without receiving a message or with Ctrl+C")
@@ -849,7 +912,8 @@ class kafka_mdml_consumer_schemaless:
                 break
     def close(self):
         """
-        Closes consumer.
+        Closes down the consumer. Ensures that received 
+        messages have been acknowledged by Kafka.
         """
         self.consumer.close()
 
@@ -945,6 +1009,7 @@ class kafka_mdml_s3_client:
             self.kafka_host, self.kafka_port,
             self.schema_host, self.schema_port
         )
+        
     def produce(self, filepath, obj_name, payload=None):
         """
         Produce data to supplied S3 endpoint and Kafka topic 
