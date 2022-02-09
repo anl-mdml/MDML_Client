@@ -749,8 +749,9 @@ class kafka_mdml_consumer:
             A tuple containing (timestamp, data) where timestamp is the 
             time the first chunk of the message was sent and where data 
             is either a filepath (save_file=True) or the bytes of the 
-            file that was chunked and streamed (save_file=False). If 
-            passthrough=True is used and a message from a topic without
+            file that was chunked and streamed (save_file=False). 
+        dict 
+            If passthrough=True is used and a message from a topic without
             chunking is received, a dictionary containing the topic and
             value of the message will be yielded. 
 
