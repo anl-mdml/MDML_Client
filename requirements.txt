@@ -1,2 +1,3 @@
 boto3
 confluent_kafka
+jsonschema
