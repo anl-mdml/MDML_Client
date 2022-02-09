@@ -1,12 +1,11 @@
-MDML Python Client
-==================
-
 Producer class
+==============
 
 .. autoclass:: mdml_client.kafka_mdml_producer
    :members:
 
 Consumer class
+==============
 
 .. autoclass:: mdml_client.kafka_mdml_consumer
    :members:
@@ -19,7 +18,9 @@ Schema-less Producer and Consumer classes
 .. autoclass:: mdml_client.kafka_mdml_consumer_schemaless
    :members:
 
-MDML S3 Client for "coat-checking" large files
+MDML S3 Client
+==============
+This is used for "coat-checking" large files.
 
 .. autoclass:: mdml_client.kafka_mdml_s3_client
    :members:
