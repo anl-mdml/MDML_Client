@@ -686,8 +686,8 @@ class kafka_mdml_consumer:
 
         Yields
         ------
-
-        A dictionary containing the topic and value of a single message  
+        dict
+            A dictionary containing the topic and value of a single message  
         """
         if verbose:
             if overall_timeout != -1:
@@ -745,14 +745,14 @@ class kafka_mdml_consumer:
 
         Yields
         ------
-
-        A tuple containing (timestamp, data) where timestamp is the 
-        time the first chunk of the message was sent and where data 
-        is either a filepath (save_file=True) or the bytes of the 
-        file that was chunked and streamed (save_file=False). If 
-        passthrough=True is used and a message from a topic without
-        chunking is received, a dictionary containing the topic and
-        value of the message will be yielded. 
+        tuple
+            A tuple containing (timestamp, data) where timestamp is the 
+            time the first chunk of the message was sent and where data 
+            is either a filepath (save_file=True) or the bytes of the 
+            file that was chunked and streamed (save_file=False). If 
+            passthrough=True is used and a message from a topic without
+            chunking is received, a dictionary containing the topic and
+            value of the message will be yielded. 
 
         """
         if verbose:
@@ -888,8 +888,8 @@ class kafka_mdml_consumer_schemaless:
         """
         Yields
         ------
-
-        A dictionary containing the topic and value of a single message 
+        dict
+            A dictionary containing the topic and value of a single message 
         """
         if verbose:
             if overall_timeout != -1:
@@ -1009,7 +1009,7 @@ class kafka_mdml_s3_client:
             self.kafka_host, self.kafka_port,
             self.schema_host, self.schema_port
         )
-        
+
     def produce(self, filepath, obj_name, payload=None):
         """
         Produce data to supplied S3 endpoint and Kafka topic 
