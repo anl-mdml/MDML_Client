@@ -372,7 +372,7 @@ def create_schema(d, title, descr, required_keys=None, add_time=False):
         Title of the schema
     descr : str
         Description of the schema
-    required_keys : list of str
+    required_keys : list(str)
         List of strings of the keys that are required in the schema
 
     Returns
@@ -510,7 +510,10 @@ class kafka_mdml_producer:
         JSON schema for the message value. If dict, value is used as the 
         schema. If string, value is used as a file path to a json file.
     config : dict
-        Confluent Kafka client config
+        Confluent Kafka client config (only recommended for advanced usage - overwrites other parameters)
+    add_time : bool
+        If True, adds a value named 'mdml_time' to the data object that
+        represents when the producer sent the message 
     kafka_host : str
         Host name of the kafka broker
     kafka_port : int
@@ -601,11 +604,12 @@ class kafka_mdml_consumer:
         Consumer group ID. Messages are only consumed by a given group ID
         once.
     auto_offset_reset : str
-        'earliest' or 'latest'. 'earliest' is the default and will start consuming
-        messages from where the consumer group left off. 'latest' will start
-        consuming messages from the time that the consumer is started. 
+        'earliest' or 'latest'. 'earliest' is the default and will start 
+        consuming messages from where the consumer group left off. 
+        'latest' will start consuming messages from the time that the
+        consumer is started. 
     show_mdml_time : bool
-        Indicator to show the mdml_time field of a message 
+        Indicator if the value of 'mdml_time' should be shown or suppressed 
     kafka_host : str
         Host name of the kafka broker
     kafka_port : int
