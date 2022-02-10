@@ -1,4 +1,4 @@
-Experiment and Replay Service Functions
+Experiment & Replay Service Functions
 ===============================
 
 .. autofunction:: mdml_client.start_experiment
