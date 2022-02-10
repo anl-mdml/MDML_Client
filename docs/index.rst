@@ -14,6 +14,7 @@ Argonne National Laboratory.
    consumer
    schemaless
    services
+   s3
    helpers
 
 Indices and tables
