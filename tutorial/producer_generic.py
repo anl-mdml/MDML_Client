@@ -3,10 +3,7 @@ import argparse
 def main(args):
     import time
     import mdml_client as mdml
-    # args.schemaHost defaults to args.host 
-    if args.schemaHost is None:
-        args.schemaHost = args.host
-
+    print(args)
     data_schema = {
         "$schema": "http://merf.egs.anl.gov/mdml-test-producer-data-schema#",
         "title": "Producer test",
@@ -74,4 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--sleep', dest="sleep", default=1,
                         help="Seconds to sleep after each message [default: 1]")
     args = parser.parse_args()
+    # args.schemaHost defaults to args.host 
+    if args.schemaHost is None:
+        args.schemaHost = args.host
     main(args)
