@@ -2,9 +2,9 @@ name: MDML Client Test
 on:
   workflow_dispatch:
   push:
-    branches: [ master, dev ]
+    branches: [ master, development ]
   pull_request:
-    branches: [ master, deV ]
+    branches: [ master, development ]
     
 jobs:
   test:
