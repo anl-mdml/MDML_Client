@@ -34,7 +34,7 @@ def test_kafka_mdml_producer():
     time.sleep(1)
     producer.flush()
 
-def test_kafka_mdml_consumer()
+def test_kafka_mdml_consumer():
   consumer = mdml.kafka_mdml_consumer(
     topics = ["mdml-test-github-actions"],
     group = "github_actions",
