@@ -578,7 +578,7 @@ class kafka_mdml_producer:
         key : str
             String for the Kafka assignor to use to calculate a partition
         partition : int
-            Number of the partition to assign the message to
+            Number of the Kafka partition to assign the message to
         """
         if self.add_time:
             data['mdml_time'] = time.time()
