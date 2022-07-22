@@ -2,6 +2,8 @@ import time
 import mdml_client as mdml
 from random import randrange
 
+time.sleep(60)
+
 def test_create_schema():
   data_schema = mdml.create_schema({
     "time": time.time(),
