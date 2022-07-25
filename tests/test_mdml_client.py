@@ -49,3 +49,31 @@ def test_kafka_mdml_consumer():
   for msg in consumer.consume(overall_timeout=30):
     msgs.append(msg)
   assert len(msgs) == 5
+
+def test_kafka_mdml_producer_schemaless():
+  producer = mdml.kafka_mdml_producer_schemaless(
+    topic = "mdml-test-schemaless",
+    kafka_host = "broker",
+    kafka_port = 9092,
+  )
+
+  for _ in range(5):
+    producer.produce({
+      "time": time.time(),
+      "int1": randrange(100),
+      "int2": randrange(100)
+    })
+    time.sleep(1)
+    producer.flush()
+
+def test_kafka_mdml_consumer_schemaless():
+  consumer = mdml.kafka_mdml_consumer_schemaless(
+    topics = ["mdml-test-schemaless"],
+    group = "tests",
+    kafka_host = "broker",
+    kafka_port = 9092,
+  )
+  msgs = []
+  for msg in consumer.consume(overall_timeout=30):
+    msgs.append(msg)
+  assert len(msgs) == 5
