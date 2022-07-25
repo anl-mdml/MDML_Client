@@ -1,3 +1,4 @@
+import json
 import time
 import mdml_client as mdml
 from random import randrange
@@ -58,11 +59,11 @@ def test_kafka_mdml_producer_schemaless():
   )
 
   for _ in range(5):
-    producer.produce({
+    producer.produce(json.dumps({
       "time": time.time(),
       "int1": randrange(100),
       "int2": randrange(100)
-    })
+    }))
     time.sleep(1)
     producer.flush()
 
@@ -75,5 +76,5 @@ def test_kafka_mdml_consumer_schemaless():
   )
   msgs = []
   for msg in consumer.consume(overall_timeout=30):
-    msgs.append(msg)
+    msgs.append(json.loads(msg))
   assert len(msgs) == 5
