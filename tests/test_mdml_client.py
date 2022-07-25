@@ -78,3 +78,68 @@ def test_kafka_mdml_consumer_schemaless():
   for msg in consumer.consume(overall_timeout=30):
     msgs.append(msg)
   assert len(msgs) == 5
+
+def test_kafka_mdml_consumer_multiple_topics():
+  data_schema = mdml.create_schema({
+    "time": time.time(),
+    "int1": 1,
+    "int2": 2
+  }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
+  producer1 = mdml.kafka_mdml_producer(
+    topic = "mdml-test-multiple-1",
+    schema = data_schema,
+    kafka_host = "broker",
+    kafka_port = 9092,
+    schema_host = "schema-registry",
+    schema_port = 8081
+  )
+  producer2 = mdml.kafka_mdml_producer(
+    topic = "mdml-test-multiple-2",
+    schema = data_schema,
+    kafka_host = "broker",
+    kafka_port = 9092,
+    schema_host = "schema-registry",
+    schema_port = 8081
+  )
+  producer3 = mdml.kafka_mdml_producer(
+    topic = "mdml-test-multiple-3",
+    schema = data_schema,
+    kafka_host = "broker",
+    kafka_port = 9092,
+    schema_host = "schema-registry",
+    schema_port = 8081
+  )
+
+  for _ in range(5):
+    producer1.produce({
+      "time": time.time(),
+      "int1": randrange(100),
+      "int2": randrange(100)
+    })
+    producer2.produce({
+      "time": time.time(),
+      "int1": randrange(100),
+      "int2": randrange(100)
+    })
+    producer3.produce({
+      "time": time.time(),
+      "int1": randrange(100),
+      "int2": randrange(100)
+    })
+    time.sleep(1)
+    producer1.flush()
+    producer2.flush()
+    producer3.flush()
+
+  consumer = mdml.kafka_mdml_consumer(
+    topics = ["mdml-test-multiple-1", "mdml-test-multiple-2", "mdml-test-multiple-3"],
+    group = "github_actions",
+    kafka_host = "broker",
+    kafka_port = 9092,
+    schema_host = "schema-registry",
+    schema_port = 8081
+  )
+  msgs = []
+  for msg in consumer.consume(overall_timeout=30):
+    msgs.append(msg)
+  assert len(msgs) == 15
