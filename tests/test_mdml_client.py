@@ -76,5 +76,5 @@ def test_kafka_mdml_consumer_schemaless():
   )
   msgs = []
   for msg in consumer.consume(overall_timeout=30):
-    msgs.append(json.loads(msg))
+    msgs.append(msg)
   assert len(msgs) == 5
