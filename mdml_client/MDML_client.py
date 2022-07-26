@@ -277,44 +277,6 @@ def get_experiment_data(exp_id, ADC_TOKEN):
     resp = requests.get(exp_sample['node']['url'], verify=False)
     return (exp_url, resp.json())
 
-# def replay_ADC_experiment(adc_sample_id, producer_kwargs={}):
-#     """
-    
-#     Parameters
-#     ==========
-#     id : str
-#         Unique ID of the experiment to replay
-#     group : str
-#         group to use when consuming the main experiment topic
-#     replay : bool
-#         Replay the experiment
-#     producer_kwargs : dict
-#         Dictionary of kwargs for this functions internal producer
-#     """
-#     experiment_replay_schema = {
-#         "$schema": "http://merf.egs.anl.gov/mdml-experiment-replay-schema#",
-#         "title": "ExperimentReplaySchema",
-#         "description": "Schema for Kafka MDML Experiment Replays",
-#         "type": "object",
-#         "properties": {
-#             "time": {
-#                 "description": "Sent timestamp",
-#                 "type": "number"
-#             },
-#             "adc_sample_id": {
-#                 "description": "Argonne Data Cloud sample ID",
-#                 "type": "string"
-#             }
-#         },
-#         "required": [ "time", "adc_sample_id" ]
-#     }
-#     producer = kafka_mdml_producer("mdml-experiment-replay", schema=experiment_replay_schema, **producer_kwargs)
-#     producer.produce({
-#         "time": time.time(),
-#         "adc_sample_id": adc_sample_id
-#     })
-#     producer.flush()
-
 def replay_experiment(experiment_id, speed=1, producer_kwargs={}):
     """
     Replay an experiment - stream data back down their original topics
@@ -440,63 +402,6 @@ def create_schema(d, title, descr, required_keys=None, add_time=False):
         #         "type": dtype
         #     }
     return schema
-
-class kafka_mdml_producer_schemaless:
-    """
-    Creates a schemaless Producer instance for interacting with the MDML.
-
-    Parameters
-    ----------
-    topic : str
-        Topic to send under
-    config: dict
-        Confluent Kafka client config
-    kafka_host : str
-        Host name of the kafka broker
-    kafka_port : int
-        Port used for the Kafka broker
-    """
-    def __init__(self, topic, config=None,
-                kafka_host="merf.egs.anl.gov", kafka_port=9092):
-        # Checking topic param
-        if type(topic) == str:
-            if topic[0:5] != "mdml-":
-                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
-            else:
-                self.topic = topic
-        else:
-            raise Exception("Error, topic must be of type string.")
-        # Create producer and its config 
-        # Create producer and its config 
-        if config is None:
-            producer_config = {
-                'bootstrap.servers': f'{kafka_host}:{kafka_port}'
-            }
-        else:
-            producer_config = config
-        self.producer = Producer(producer_config)
-    def produce(self, data, key=None, partition=None):
-        """
-        Produce data to the supplied topic
-
-        Parameters
-        ----------
-        data : dict
-            Dictionary of the data
-        key : string
-            Key of the message (used in determining a partition) - not required
-        partition : int
-            Partition used to save the message - not required
-        """
-        if partition is None:
-            self.producer.produce(topic=self.topic, value=data, key=key)
-        else:
-            self.producer.produce(topic=self.topic, value=data, key=key, partition=partition)
-    def flush(self):
-        """
-        Flush (send) any messages currently waiting in the producer.
-        """
-        self.producer.flush()
 
 class kafka_mdml_producer:
     """
@@ -835,6 +740,63 @@ class kafka_mdml_consumer:
         messages have been acknowledged by Kafka.
         """
         self.consumer.close()
+
+class kafka_mdml_producer_schemaless:
+    """
+    Creates a schemaless Producer instance for interacting with the MDML.
+
+    Parameters
+    ----------
+    topic : str
+        Topic to send under
+    config: dict
+        Confluent Kafka client config
+    kafka_host : str
+        Host name of the kafka broker
+    kafka_port : int
+        Port used for the Kafka broker
+    """
+    def __init__(self, topic, config=None,
+                kafka_host="merf.egs.anl.gov", kafka_port=9092):
+        # Checking topic param
+        if type(topic) == str:
+            if topic[0:5] != "mdml-":
+                raise Exception("Error, topic must be of the form 'mdml-<experiment id>-<sensor>'")
+            else:
+                self.topic = topic
+        else:
+            raise Exception("Error, topic must be of type string.")
+        # Create producer and its config 
+        # Create producer and its config 
+        if config is None:
+            producer_config = {
+                'bootstrap.servers': f'{kafka_host}:{kafka_port}'
+            }
+        else:
+            producer_config = config
+        self.producer = Producer(producer_config)
+    def produce(self, data, key=None, partition=None):
+        """
+        Produce data to the supplied topic
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary of the data
+        key : string
+            Key of the message (used in determining a partition) - not required
+        partition : int
+            Partition used to save the message - not required
+        """
+        if partition is None:
+            self.producer.produce(topic=self.topic, value=data, key=key)
+        else:
+            self.producer.produce(topic=self.topic, value=data, key=key, partition=partition)
+    def flush(self):
+        """
+        Flush (send) any messages currently waiting in the producer.
+        """
+        self.producer.flush()
 
 class kafka_mdml_consumer_schemaless:
     """
