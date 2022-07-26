@@ -71,7 +71,5 @@ jobs:
         run: pip install pytest
       - name: Install mdml
         run: pip install mdml_client
-      - name: install mdml minimal
-        run: git clone 
       - name: Run test script
         run: pytest $GITHUB_WORKSPACE/tests/test_mdml_client.py
