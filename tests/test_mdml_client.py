@@ -273,5 +273,31 @@ def test_chunking_files():
     })
     mdml.stop_experiment("test-experiment-service")
 
+def test_replay_service():
+  mdml.replay_experiment("test-experiment-service", producer_kwargs={
+    "kafka_host": KAFKA_HOST,
+    "kafka_port": KAFKA_PORT,
+    "schema_host": SCHEMA_HOST,
+    "schema_port": SCHEMA_PORT
+  })
+  
+  consumer = mdml.kafka_mdml_consumer(
+    topics = [
+      "mdml-test-experiment-topic-A", 
+      "mdml-test-experiment-topic-B", 
+      "mdml-test-experiment-topic-C"
+    ],
+    group = "github_actions",
+    kafka_host = KAFKA_HOST,
+    kafka_port = KAFKA_PORT,
+    schema_host = SCHEMA_HOST,
+    schema_port = SCHEMA_PORT
+  )
+  msgs = []
+  for msg in consumer.consume(overall_timeout=30):
+    print(msg)
+    msgs.append(msg)
+  assert len(msgs) == 15
+
 if LOCAL:
   test_chunking_files()
