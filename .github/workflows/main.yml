@@ -9,7 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: python:3.9.13
+    container: 
+      image: python:3.9.13
+      env:
+        HOST: broker
+        SCHEMA_HOST: schema-registry
     services:
 
       zookeeper:
@@ -47,6 +51,18 @@ jobs:
           SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
           SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
     
+      replay_service:
+        image: jelias1/anl-mdml:replay_service
+        env:
+          HOST: "${MDML_HOST}"
+          SCHEMA_HOST: "${MDML_SCHEMA_HOST}"
+
+      experiment_service:
+        image: jelias1/anl-mdml:experiment_service
+        env:
+          HOST: "${MDML_HOST}"
+          SCHEMA_HOST: "${MDML_SCHEMA_HOST}"
+    
     steps:
       - uses: actions/checkout@v3
       - name: Update pip
@@ -55,5 +71,7 @@ jobs:
         run: pip install pytest
       - name: Install mdml
         run: pip install mdml_client
+      - name: install mdml minimal
+        run: git clone 
       - name: Run test script
         run: pytest $GITHUB_WORKSPACE/tests/test_mdml_client.py
