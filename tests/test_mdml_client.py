@@ -269,7 +269,14 @@ def test_experiment():
     "time": time.time(),
     "event_descr": "end data collection"
   })
-  mdml.stop_experiment("test-experiment-service")
+  mdml.stop_experiment("test-experiment-service",
+    producer_kwargs = {
+      "kafka_host": KAFKA_HOST,
+      "kafka_port": KAFKA_PORT,
+      "schema_host": SCHEMA_HOST,
+      "schema_port": SCHEMA_PORT
+    }
+  )
 
 def test_replay_service():
   mdml.replay_experiment("test-experiment-service", producer_kwargs={
