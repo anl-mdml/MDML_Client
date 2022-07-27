@@ -56,12 +56,16 @@ jobs:
         env:
           HOST: broker
           SCHEMA_HOST: schema-registry
+          STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+          STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
 
       experiment_service:
         image: jelias1/anl-mdml:experiment_service
         env:
           HOST: broker
           SCHEMA_HOST: schema-registry
+          STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+          STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
     
     steps:
       - uses: actions/checkout@v3
