@@ -348,7 +348,7 @@ def create_schema(d, title, descr, required_keys=None, add_time=False):
         except:
             raise Exception("Unhandled type exception")
         if dtype == "array":
-            item_type = py_type_to_schema_type[type(dat[key][0])]
+            item_type = py_type_to_schema_type[type(dat[0])]
             return {
                 "type": "array",
                 "items": {
