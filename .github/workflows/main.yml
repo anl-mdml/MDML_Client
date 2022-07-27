@@ -54,14 +54,14 @@ jobs:
       replay_service:
         image: jelias1/anl-mdml:replay_service
         env:
-          HOST: "broker"
-          SCHEMA_HOST: "schema-registry"
+          HOST: broker
+          SCHEMA_HOST: schema-registry
 
       experiment_service:
         image: jelias1/anl-mdml:experiment_service
         env:
-          HOST: "broker"
-          SCHEMA_HOST: "schema-registry"
+          HOST: broker
+          SCHEMA_HOST: schema-registry
     
     steps:
       - uses: actions/checkout@v3
