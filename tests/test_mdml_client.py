@@ -299,7 +299,8 @@ def test_replay_service():
     kafka_host = KAFKA_HOST,
     kafka_port = KAFKA_PORT,
     schema_host = SCHEMA_HOST,
-    schema_port = SCHEMA_PORT
+    schema_port = SCHEMA_PORT,
+    auto_offset_reset = "latest"
   )
   msgs = {
     'a': [],
