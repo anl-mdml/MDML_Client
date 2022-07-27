@@ -269,6 +269,9 @@ def test_experiment():
     "time": time.time(),
     "event_descr": "end data collection"
   })
+  a_producer.flush()
+  b_producer.flush()
+  c_producer.flush()
   mdml.stop_experiment("test-experiment-service",
     producer_kwargs = {
       "kafka_host": KAFKA_HOST,
@@ -298,10 +301,22 @@ def test_replay_service():
     schema_host = SCHEMA_HOST,
     schema_port = SCHEMA_PORT
   )
-  msgs = []
+  msgs = {
+    'a': [],
+    'b': [],
+    'c': [],
+  }
+  print("Printing replay data")
   for msg in consumer.consume(overall_timeout=30):
     print(msg)
-    msgs.append(msg)
-
+    if msg['topic'] == "mdml-test-experiment-topic-A":
+      msgs['a'].append(msg)
+    elif msg['topic'] == "mdml-test-experiment-topic-B":
+      msgs['b'].append(msg)
+    elif msg['topic'] == "mdml-test-experiment-topic-C":
+      msgs['c'].append(msg)
+  assert len(msgs['a']) == 2
+  assert len(msgs['b']) == 40
+  assert len(msgs['c']) == 40
 if LOCAL:
   test_chunking_files()
