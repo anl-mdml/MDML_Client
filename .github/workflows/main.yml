@@ -72,4 +72,4 @@ jobs:
       - name: Install mdml
         run: pip install mdml_client
       - name: Run test script
-        run: pytest $GITHUB_WORKSPACE/tests/test_mdml_client.py
+        run: pytest -s $GITHUB_WORKSPACE/tests/test_mdml_client.py
