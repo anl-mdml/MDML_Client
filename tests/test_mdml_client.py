@@ -281,13 +281,9 @@ def test_experiment():
     }
   )
 
+time.sleep(90) # allow experiment service time to verify the experiment data
+
 def test_replay_service():
-  mdml.replay_experiment("test-experiment-service", producer_kwargs={
-    "kafka_host": KAFKA_HOST,
-    "kafka_port": KAFKA_PORT,
-    "schema_host": SCHEMA_HOST,
-    "schema_port": SCHEMA_PORT
-  })
   
   consumer = mdml.kafka_mdml_consumer(
     topics = [
@@ -308,6 +304,12 @@ def test_replay_service():
     'c': [],
   }
   print("Printing replay data")
+  mdml.replay_experiment("test-experiment-service", producer_kwargs={
+    "kafka_host": KAFKA_HOST,
+    "kafka_port": KAFKA_PORT,
+    "schema_host": SCHEMA_HOST,
+    "schema_port": SCHEMA_PORT
+  })
   for msg in consumer.consume(overall_timeout=30):
     print(msg)
     if msg['topic'] == "mdml-test-experiment-topic-A":
