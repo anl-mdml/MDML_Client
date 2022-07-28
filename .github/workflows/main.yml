@@ -51,21 +51,29 @@ jobs:
           SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
           SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
     
-      replay_service:
-        image: jelias1/anl-mdml:replay_service
+      experiment_replay_combined:
+        image: jelias1/anl-mdml:experiment_replay_combined
         env:
           HOST: broker
           SCHEMA_HOST: schema-registry
           STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
           STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
 
-      experiment_service:
-        image: jelias1/anl-mdml:experiment_service
-        env:
-          HOST: broker
-          SCHEMA_HOST: schema-registry
-          STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
-          STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
+#       replay_service:
+#         image: jelias1/anl-mdml:replay_service
+#         env:
+#           HOST: broker
+#           SCHEMA_HOST: schema-registry
+#           STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+#           STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
+
+#       experiment_service:
+#         image: jelias1/anl-mdml:experiment_service
+#         env:
+#           HOST: broker
+#           SCHEMA_HOST: schema-registry
+#           STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+#           STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
     
     steps:
       - uses: actions/checkout@v3
