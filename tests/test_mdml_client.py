@@ -284,7 +284,7 @@ def test_experiment():
 time.sleep(90) # allow experiment service time to verify the experiment data
 
 def test_replay_service():
-  
+  print("starting replay test")
   consumer = mdml.kafka_mdml_consumer(
     topics = [
       "mdml-test-experiment-topic-A", 
