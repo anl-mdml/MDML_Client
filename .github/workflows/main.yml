@@ -69,6 +69,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
+      - name: try to reach storageGRID
+        run: curl s3.it.anl.gov:18082
       - name: Update pip
         run: python -m pip install --upgrade pip
       - name: Install pytest
