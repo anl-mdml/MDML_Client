@@ -296,8 +296,11 @@ def test_replay_service():
     kafka_port = KAFKA_PORT,
     schema_host = SCHEMA_HOST,
     schema_port = SCHEMA_PORT,
-    auto_offset_reset = "latest"
-  )
+    # auto_offset_reset = "latest"
+  )  
+  for msg in consumer.consume(overall_timeout=30):
+    continue
+
   msgs = {
     'a': [],
     'b': [],
