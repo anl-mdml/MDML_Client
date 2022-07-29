@@ -18,6 +18,7 @@ else:
 if not LOCAL:
   time.sleep(60)
 
+print("Start test_create_schema")
 def test_create_schema():
   data_schema = mdml.create_schema({
     "time": time.time(),
@@ -35,7 +36,7 @@ def test_create_schema():
   }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
   assert type(data_schema) == dict
 
-
+print("Start test_kafka_mdml_producer")
 def test_kafka_mdml_producer():
   data_schema = mdml.create_schema({
     "time": time.time(),
@@ -60,6 +61,7 @@ def test_kafka_mdml_producer():
     time.sleep(1)
     producer.flush()
 
+print("Start test_kafka_mdml_consumer")
 def test_kafka_mdml_consumer():
   consumer = mdml.kafka_mdml_consumer(
     topics = ["mdml-test-github-actions"],
@@ -74,6 +76,7 @@ def test_kafka_mdml_consumer():
     msgs.append(msg)
   assert len(msgs) == 5
 
+print("Start test_kafka_producer_schemaless")
 def test_kafka_mdml_producer_schemaless():
   producer = mdml.kafka_mdml_producer_schemaless(
     topic = "mdml-test-schemaless",
@@ -90,6 +93,7 @@ def test_kafka_mdml_producer_schemaless():
     time.sleep(1)
     producer.flush()
 
+print("Start test_kafka_mdml_consumer_schemaless")
 def test_kafka_mdml_consumer_schemaless():
   consumer = mdml.kafka_mdml_consumer_schemaless(
     topics = ["mdml-test-schemaless"],
@@ -102,6 +106,7 @@ def test_kafka_mdml_consumer_schemaless():
     msgs.append(msg)
   assert len(msgs) == 5
 
+print("Start test_kafka_consumer_multiple_topics")
 def test_kafka_mdml_consumer_multiple_topics():
   data_schema = mdml.create_schema({
     "time": time.time(),
@@ -168,6 +173,7 @@ def test_kafka_mdml_consumer_multiple_topics():
   assert len(msgs) == 15
 
 
+print("Start test_chunking_files")
 def test_chunking_files():
   with open("big_file.txt", "w") as f:
     f.write("A" * 1024 * 1024)
@@ -205,6 +211,7 @@ def test_chunking_files():
         orig_file = f2.read()
         assert orig_file == chunked_file
 
+print("Start test_experiment")
 def test_experiment():
   mdml.start_experiment("test-experiment-service", 
   topics = [
@@ -293,6 +300,7 @@ def test_experiment():
 
 time.sleep(90) # allow experiment service time to verify the experiment data
 
+print("Start test_replay_service")
 def test_replay_service():
   print("starting replay test")
   consumer = mdml.kafka_mdml_consumer(
