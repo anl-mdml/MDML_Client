@@ -26,6 +26,16 @@ def test_create_schema():
   }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
   assert type(data_schema) == dict
 
+  data_schema = mdml.create_schema({
+    "time": time.time(),
+    "int_array": [1,2,3,4],
+    "str_array": ["one", "two", "three"],
+    "array_array": [[1,2,3], ["one", "two", "three"]],
+    "dict_array": [{"md": "ml"},{"jakob":"elias"},{"hello": "world"}]
+  }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
+  assert type(data_schema) == dict
+
+
 def test_kafka_mdml_producer():
   data_schema = mdml.create_schema({
     "time": time.time(),
