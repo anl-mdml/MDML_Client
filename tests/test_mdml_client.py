@@ -22,19 +22,39 @@ print("Start test_create_schema")
 def test_create_schema():
   data_schema = mdml.create_schema({
     "time": time.time(),
-    "int1": 1,
-    "int2": 2
-  }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
-  assert type(data_schema) == dict
-
-  data_schema = mdml.create_schema({
-    "time": time.time(),
+    "int": 1,
+    "str": 2,
+    "float": float(12.28),
     "int_array": [1,2,3,4],
     "str_array": ["one", "two", "three"],
     "array_array": [[1,2,3], ["one", "two", "three"]],
-    "dict_array": [{"md": "ml"},{"jakob":"elias"},{"hello": "world"}]
+    "dict_array": [{"md": "ml"},{"jakob":"elias"},{"hello": "world"}],
+    "dict": {"hello": "world", "int": 123}
   }, "Test schema", "Schema used for testing the MDML in GitHub Actions")
   assert type(data_schema) == dict
+  producer = mdml.kafka_mdml_producer(
+    topic = "mdml-test-create-schema",
+    schema = data_schema,
+    kafka_host = KAFKA_HOST,
+    kafka_port = KAFKA_PORT,
+    schema_host = SCHEMA_HOST,
+    schema_port = SCHEMA_PORT
+  )
+  for _ in range(5):
+    producer.produce({
+      "time": time.time(),
+      "int": 1,
+      "str": 2,
+      "float": float(12.28),
+      "int_array": [1,2,3,4],
+      "str_array": ["one", "two", "three"],
+      "array_array": [[1,2,3], ["one", "two", "three"]],
+      "dict_array": [{"md": "ml"},{"jakob":"elias"},{"hello": "world"}],
+      "dict": {"hello": "world", "int": 123}
+    })
+    time.sleep(0.5)
+    producer.flush()
+
 
 print("Start test_kafka_mdml_producer")
 def test_kafka_mdml_producer():
