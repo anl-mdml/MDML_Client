@@ -2,14 +2,18 @@ name: MDML Client Test
 on:
   workflow_dispatch:
   push:
-    branches: [ master, dev ]
+    branches: [ master, development ]
   pull_request:
-    branches: [ master, deV ]
+    branches: [ master, development ]
     
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: python:3.9.13
+    container: 
+      image: python:3.9.13
+      env:
+        HOST: broker
+        SCHEMA_HOST: schema-registry
     services:
 
       zookeeper:
@@ -46,6 +50,30 @@ jobs:
           SCHEMA_REGISTRY_HOST_NAME: schema-registry
           SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
           SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
+    
+      experiment_replay_combined:
+        image: jelias1/anl-mdml:experiment_replay_combined
+        env:
+          HOST: broker
+          SCHEMA_HOST: schema-registry
+          STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+          STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
+
+#       replay_service:
+#         image: jelias1/anl-mdml:replay_service
+#         env:
+#           HOST: broker
+#           SCHEMA_HOST: schema-registry
+#           STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+#           STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
+
+#       experiment_service:
+#         image: jelias1/anl-mdml:experiment_service
+#         env:
+#           HOST: broker
+#           SCHEMA_HOST: schema-registry
+#           STORAGE_GRID_ACCESS_KEY: ${{ secrets.STORAGE_GRID_ACCESS_KEY }}
+#           STORAGE_GRID_SECRET_KEY: ${{ secrets.STORAGE_GRID_SECRET_KEY }}
     
     steps:
       - uses: actions/checkout@v3
